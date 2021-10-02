@@ -51,11 +51,11 @@ namespace Simulator.Tests
         [InlineData(0b_000000110010_00000_000_00000_0000000, 50)]
         [InlineData(0b_111111111111_00000_000_00000_0000000, -1)]
         [InlineData(0b_111111001110_00000_000_00000_0000000, -50)]
-        public void Decode_I_Format_Extracts_ImmediateValue_WithSignExtension(UInt32 instruction, Int32 immediate)
+        public void Decode_I_Format_Extracts_Immediate_WithSignExtension(UInt32 instruction, Int32 immediate)
         {
             Decoder decoder = new Decoder();
             DecodeInfo info = decoder.Decode(instruction);
-            Assert.Equal(immediate, info.I_SignedImmediate);
+            Assert.Equal(immediate, info.I_Immediate);
         }
 
         [Theory]
@@ -88,7 +88,8 @@ namespace Simulator.Tests
         {
             Decoder decoder = new Decoder();
             DecodeInfo info = decoder.Decode(instruction);
-            Assert.Equal(immediate, info.S_SignedImmediate);
+            info.Format = Format.S;
+            Assert.Equal(immediate, info.S_Immediate);
         }
 
         [Theory]
@@ -105,7 +106,7 @@ namespace Simulator.Tests
         {
             Decoder decoder = new Decoder();
             DecodeInfo info = decoder.Decode(instruction);
-            Assert.Equal(immediate, info.B_SignedImmediate);
+            Assert.Equal(immediate, info.B_Immediate);
         }
 
         [Theory]
@@ -113,11 +114,12 @@ namespace Simulator.Tests
         [InlineData(0b_00000000000000000001_00000_0000000, 0x1000)]
         [InlineData(0b_00000000000000000010_11111_1111111, 0x2000)]
         [InlineData(0b_11111111111111111111_00000_0000000, 0xFFFFF000)]
-        public void Decode_U_Format_Extracts_ImmediateValue(UInt32 instruction, UInt32 immediate)
+        [InlineData(0b_01111111111111111111_00000_0000000, 0x7FFFF000)]
+        public void Decode_U_Format_Extracts_Immediate_NoSignExtension(UInt32 instruction, UInt32 immediate)
         {
             Decoder decoder = new Decoder();
             DecodeInfo info = decoder.Decode(instruction);
-            Assert.Equal(immediate, info.U_UnsignedImmediate);
+            Assert.Equal(immediate, info.U_Immediate);
         }
 
         [Theory]
@@ -128,52 +130,166 @@ namespace Simulator.Tests
         {
             Decoder decoder = new Decoder();
             DecodeInfo info = decoder.Decode(instruction);
-            Assert.Equal(immediate, info.J_SignedImmediate);
+            Assert.Equal(immediate, info.J_Immediate);
         }
 
         [Theory]
-        [InlineData(0b_0000000_00000_00000_000_00000_0110011, Instruction.ADD)]
-        [InlineData(0b_0100000_00000_00000_000_00000_0110011, Instruction.SUB)]
-        [InlineData(0b_0000000_00000_00000_001_00000_0110011, Instruction.SLL)]
-        [InlineData(0b_0000000_00000_00000_010_00000_0110011, Instruction.SLT)]
-        [InlineData(0b_0000000_00000_00000_011_00000_0110011, Instruction.SLTU)]
-        [InlineData(0b_0000000_00000_00000_100_00000_0110011, Instruction.XOR)]
-        [InlineData(0b_0000000_00000_00000_101_00000_0110011, Instruction.SRL)]
-        [InlineData(0b_0100000_00000_00000_101_00000_0110011, Instruction.SRA)]
-        [InlineData(0b_0000000_00000_00000_110_00000_0110011, Instruction.OR)]
-        [InlineData(0b_0000000_00000_00000_111_00000_0110011, Instruction.AND)]
-        [InlineData(0b_0000000_00000_00000_000_00000_0010011, Instruction.ADDI)]
-        [InlineData(0b_0000000_00000_00000_010_00000_0010011, Instruction.SLTI)]
-        [InlineData(0b_0000000_00000_00000_011_00000_0010011, Instruction.SLTIU)]
-        [InlineData(0b_0000000_00000_00000_100_00000_0010011, Instruction.XORI)]
-        [InlineData(0b_0000000_00000_00000_110_00000_0010011, Instruction.ORI)]
-        [InlineData(0b_0000000_00000_00000_111_00000_0010011, Instruction.ANDI)]
-        [InlineData(0b_0000000_00000_00000_001_00000_0010011, Instruction.SLLI)]
-        [InlineData(0b_0000000_00000_00000_101_00000_0010011, Instruction.SRLI)]
-        [InlineData(0b_0100000_00000_00000_101_00000_0010011, Instruction.SRAI)]
-        [InlineData(0b_0000000_00000_00000_000_00000_0000011, Instruction.LB)]
-        [InlineData(0b_0000000_00000_00000_010_00000_0000011, Instruction.LH)]
-        [InlineData(0b_0000000_00000_00000_011_00000_0000011, Instruction.LW)]
-        [InlineData(0b_0000000_00000_00000_100_00000_0000011, Instruction.LBU)]
-        [InlineData(0b_0000000_00000_00000_110_00000_0000011, Instruction.LHU)]
-        [InlineData(0b_0000000_00000_00000_000_00000_0100011, Instruction.SB)]
-        [InlineData(0b_0000000_00000_00000_001_00000_0100011, Instruction.SH)]
-        [InlineData(0b_0000000_00000_00000_010_00000_0100011, Instruction.SW)]
-        [InlineData(0b_0000000_00000_00000_000_00000_1100011, Instruction.BEQ)]
-        [InlineData(0b_0000000_00000_00000_001_00000_1100011, Instruction.BNE)]
-        [InlineData(0b_0000000_00000_00000_100_00000_1100011, Instruction.BLT)]
-        [InlineData(0b_0000000_00000_00000_101_00000_1100011, Instruction.BGE)]
-        [InlineData(0b_0000000_00000_00000_110_00000_1100011, Instruction.BLTU)]
-        [InlineData(0b_0000000_00000_00000_111_00000_1100011, Instruction.BGEU)]
-        // [InlineData(0b_0000000_00000_00000_000_00000_0110111, Instruction.LUI)]
-        // [InlineData(0b_0000000_00000_00000_000_00000_0010111, Instruction.AUIPC)]
-        // [InlineData(0b_0000000_00000_00000_000_00000_1100111, Instruction.JALR)]
-        // [InlineData(0b_0000000_00000_00000_000_00000_1101111, Instruction.JAL)]
-        public void Decode_Identifies_Instruction(UInt32 word, Instruction instruction)
+        [InlineData(0b_0000000_00000_00000_000_00000_0110011, Instruction.ADD, Format.R)]
+        [InlineData(0b_0100000_00000_00000_000_00000_0110011, Instruction.SUB, Format.R)]
+        [InlineData(0b_0000000_00000_00000_001_00000_0110011, Instruction.SLL, Format.R)]
+        [InlineData(0b_0000000_00000_00000_010_00000_0110011, Instruction.SLT, Format.R)]
+        [InlineData(0b_0000000_00000_00000_011_00000_0110011, Instruction.SLTU, Format.R)]
+        [InlineData(0b_0000000_00000_00000_100_00000_0110011, Instruction.XOR, Format.R)]
+        [InlineData(0b_0000000_00000_00000_101_00000_0110011, Instruction.SRL, Format.R)]
+        [InlineData(0b_0100000_00000_00000_101_00000_0110011, Instruction.SRA, Format.R)]
+        [InlineData(0b_0000000_00000_00000_110_00000_0110011, Instruction.OR, Format.R)]
+        [InlineData(0b_0000000_00000_00000_111_00000_0110011, Instruction.AND, Format.R)]
+        [InlineData(0b_0000000_00000_00000_000_00000_0010011, Instruction.ADDI, Format.I)]
+        [InlineData(0b_0000000_00000_00000_010_00000_0010011, Instruction.SLTI, Format.I)]
+        [InlineData(0b_0000000_00000_00000_011_00000_0010011, Instruction.SLTIU, Format.I)]
+        [InlineData(0b_0000000_00000_00000_100_00000_0010011, Instruction.XORI, Format.I)]
+        [InlineData(0b_0000000_00000_00000_110_00000_0010011, Instruction.ORI, Format.I)]
+        [InlineData(0b_0000000_00000_00000_111_00000_0010011, Instruction.ANDI, Format.I)]
+        [InlineData(0b_0000000_00000_00000_001_00000_0010011, Instruction.SLLI, Format.I)]
+        [InlineData(0b_0000000_00000_00000_101_00000_0010011, Instruction.SRLI, Format.I)]
+        [InlineData(0b_0100000_00000_00000_101_00000_0010011, Instruction.SRAI, Format.I)]
+        [InlineData(0b_0000000_00000_00000_000_00000_0000011, Instruction.LB, Format.I)]
+        [InlineData(0b_0000000_00000_00000_010_00000_0000011, Instruction.LH, Format.I)]
+        [InlineData(0b_0000000_00000_00000_011_00000_0000011, Instruction.LW, Format.I)]
+        [InlineData(0b_0000000_00000_00000_100_00000_0000011, Instruction.LBU, Format.I)]
+        [InlineData(0b_0000000_00000_00000_110_00000_0000011, Instruction.LHU, Format.I)]
+        [InlineData(0b_0000000_00000_00000_000_00000_0100011, Instruction.SB, Format.S)]
+        [InlineData(0b_0000000_00000_00000_001_00000_0100011, Instruction.SH, Format.S)]
+        [InlineData(0b_0000000_00000_00000_010_00000_0100011, Instruction.SW, Format.S)]
+        [InlineData(0b_0000000_00000_00000_000_00000_1100011, Instruction.BEQ, Format.B)]
+        [InlineData(0b_0000000_00000_00000_001_00000_1100011, Instruction.BNE, Format.B)]
+        [InlineData(0b_0000000_00000_00000_100_00000_1100011, Instruction.BLT, Format.B)]
+        [InlineData(0b_0000000_00000_00000_101_00000_1100011, Instruction.BGE, Format.B)]
+        [InlineData(0b_0000000_00000_00000_110_00000_1100011, Instruction.BLTU, Format.B)]
+        [InlineData(0b_0000000_00000_00000_111_00000_1100011, Instruction.BGEU, Format.B)]
+        [InlineData(0b_0000000_00000_00000_000_00000_0110111, Instruction.LUI, Format.U)]
+        [InlineData(0b_0000000_00000_00000_000_00000_0010111, Instruction.AUIPC, Format.U)]
+        [InlineData(0b_0000000_00000_00000_000_00000_1100111, Instruction.JALR, Format.I)]
+        [InlineData(0b_0000000_00000_00000_000_00000_1101111, Instruction.JAL, Format.J)]
+        public void Decode_Identifies_Instruction_and_Format(UInt32 word, Instruction instruction, Format format)
         {
             Decoder decoder = new Decoder();
             DecodeInfo info = decoder.Decode(word);
             Assert.Equal(instruction, info.Instruction);
+            Assert.Equal(format, info.Format);
+        }
+
+        [Theory]
+        [InlineData(Instruction.ADD, 5, 6, 7, @"^add\s+x5,\s?x6,\s?x7$")]
+        public void DecodeInfo_R_Format_ToString(Instruction instruction, UInt16 rd, UInt16 rs1, UInt16 rs2, string expected)
+        {
+            DecodeInfo info = new DecodeInfo
+            {
+                Format = Format.R,
+                Instruction = instruction,
+                RD = rd,
+                RS1 = rs1,
+                RS2 = rs2
+            };
+            string text = info.ToString();
+            Assert.Matches(expected, text);
+        }
+
+        [Theory]
+        [InlineData(Instruction.ADDI, 5, 6, 50, @"^addi\s+x5,\s?x6,\s?50$")]
+        [InlineData(Instruction.ADDI, 5, 6, -50, @"^addi\s+x5,\s?x6,\s?-50$")]
+        public void DecodeInfo_I_Format_ToString(Instruction instruction, UInt16 rd, UInt16 rs1, Int32 immediate, string expected)
+        {
+            DecodeInfo info = new DecodeInfo
+            {
+                Format = Format.I,
+                Instruction = instruction,
+                RD = rd,
+                RS1 = rs1,
+                I_Immediate = immediate
+            };
+            string text = info.ToString();
+            Assert.Matches(expected, text);
+        }
+
+        [Theory]
+        [InlineData(Instruction.SW, 5, 6, -50, @"^sw\s+x5,\s?\(-50\)x6$")]
+        public void DecodeInfo_S_Format_ToString(Instruction instruction, UInt16 rd, UInt16 rs1, Int32 immediate, string expected)
+        {
+            DecodeInfo info = new DecodeInfo
+            {
+                Format = Format.S,
+                Instruction = instruction,
+                RD = rd,
+                RS1 = rs1,
+                S_Immediate = immediate
+            };
+            string text = info.ToString();
+            Assert.Matches(expected, text);
+        }
+
+        [Theory]
+        [InlineData(Instruction.BEQ, 5, 6, 8, @"^beq\s+x5,\s?x6,\s?16$")]
+        [InlineData(Instruction.BEQ, 5, 6, -8, @"^beq\s+x5,\s?x6,\s?-16$")]
+        public void DecodeInfo_B_Format_ToString_No_PC(Instruction instruction, UInt16 rd, UInt16 rs1, Int32 immediate, string expected)
+        {
+            DecodeInfo info = new DecodeInfo
+            {
+                Format = Format.B,
+                Instruction = instruction,
+                RD = rd,
+                RS1 = rs1,
+                B_Immediate = immediate
+            };
+            string text = info.ToString();
+            Assert.Matches(expected, text);
+        }
+
+        [Theory]
+        [InlineData(Instruction.BEQ, 5, 6, 8, 0x80001000, @"^beq\s+x5,\s?x6,\s?16\s+#\s+0x80001010$")]
+        [InlineData(Instruction.BEQ, 5, 6, -8, 0x80001000, @"^beq\s+x5,\s?x6,\s?-16\s+#\s+0x80000FF0$")]
+        public void DecodeInfo_B_Format_ToString_With_PC(Instruction instruction, UInt16 rd, UInt16 rs1, Int32 immediate, UInt32 pc, string expected)
+        {
+            DecodeInfo info = new DecodeInfo
+            {
+                Format = Format.B,
+                Instruction = instruction,
+                RD = rd,
+                RS1 = rs1,
+                B_Immediate = immediate
+            };
+            string text = info.ToString(pc);
+            Assert.Matches(expected, text);
+        }
+
+        [Theory]
+        [InlineData(Instruction.LUI, 5, 0x12345000, @"^lui\s+x5,\s?0x12345\s+#\s+0x12345000$")]
+        public void DecodeInfo_U_Format_ToString(Instruction instruction, UInt16 rd, UInt32 immediate, string expected)
+        {
+            DecodeInfo info = new DecodeInfo
+            {
+                Format = Format.U,
+                Instruction = instruction,
+                RD = rd,
+                U_Immediate = immediate
+            };
+            string text = info.ToString();
+            Assert.Matches(expected, text);
+        }
+
+        [Theory]
+        [InlineData(Instruction.JAL, 5, 8, @"^jal\s+x5,\s?16$")]
+        public void DecodeInfo_J_Format_ToString_No_PC(Instruction instruction, UInt16 rd, Int32 immediate, string expected)
+        {
+            DecodeInfo info = new DecodeInfo
+            {
+                Format = Format.J,
+                Instruction = instruction,
+                RD = rd,
+                J_Immediate = immediate
+            };
+            string text = info.ToString();
+            Assert.Matches(expected, text);
         }
     }
 }

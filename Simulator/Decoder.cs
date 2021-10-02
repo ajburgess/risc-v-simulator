@@ -2,6 +2,11 @@ using System;
 
 namespace Simulator
 {
+    public enum Format
+    {
+        UNKNOWN, R, I, S, B, U, J
+    }
+
     public enum Instruction
     {
         UNKNOWN,
@@ -53,12 +58,52 @@ namespace Simulator
         public UInt16 RD { get; set; }
         public UInt16 RS1 { get; set; }
         public UInt16 RS2 { get; set; }
-        public Int32 I_SignedImmediate { get; set; }
-        public Int32 S_SignedImmediate { get; set; }
-        public Int32 B_SignedImmediate { get; set; }
-        public Int32 J_SignedImmediate { get; set; }
-        public UInt32 U_UnsignedImmediate { get; set; }
+        public Int32 I_Immediate { get; set; } // 12 bits
+        public Int32 S_Immediate { get; set; } // 12 bits
+        public Int32 B_Immediate { get; set; } // 13 bits
+        public UInt32 U_Immediate { get; set; } // 32 bits
+        public Int32 J_Immediate { get; set; } // 21 bits
         public Instruction Instruction { get; set; }
+        public Format Format { get; set; }
+
+        public string ToString(UInt32 pc)
+        {
+            string text = this.ToString();
+            switch (Format)
+            {
+                case Format.B:
+                {
+                    Int32 offset = (B_Immediate << 1);
+                    UInt32 destination_pc = (UInt32)(pc + offset);
+                    text += $" # 0x{destination_pc:X8}";
+                    break;
+                }
+            }
+            return text;
+        }
+
+        public override string ToString()
+        {
+            string instruction = Instruction.ToString().ToLower();
+
+            switch (Format)
+            {
+                case Format.R:
+                    return $"{instruction} x{RD},x{RS1},x{RS2}";
+                case Format.I:
+                    return $"{instruction} x{RD},x{RS1},{I_Immediate}";
+                case Format.S:
+                    return $"{instruction} x{RD},({S_Immediate})x{RS1}";
+                case Format.B:
+                    return $"{instruction} x{RD},x{RS1},{B_Immediate * 2}";
+                case Format.U:
+                    return $"{instruction} x{RD},0x{(U_Immediate >> 12):X5} # 0x{U_Immediate:X8}";
+                case Format.J:
+                    return $"{instruction} x{RD},{J_Immediate * 2}";
+                default:
+                    return "";
+            }
+        }
     }
 
     public class Decoder
@@ -95,7 +140,7 @@ namespace Simulator
             UInt32 bits_11_downto_7 = (instruction >> 7) & 0b_1_1111;
             UInt32 bit_7 = (instruction >> 7) & 0b_1;
             UInt32 bits_6_downto_0 = instruction & 0b_111_1111;
-            
+
             DecodeInfo info = new DecodeInfo
             {
                 Opcode = (UInt16)(bits_6_downto_0),
@@ -104,18 +149,20 @@ namespace Simulator
                 Funct7 = (UInt16)(bits_31_downto_25),
                 RS1 = (UInt16)(bits_19_downto_15),
                 RS2 = (UInt16)(bits_24_downto_20),
-                I_SignedImmediate = SignExtend12(bits_31_downto_20),
-                S_SignedImmediate = SignExtend12(bits_31_downto_25 << 5 | bits_11_downto_7),
-                B_SignedImmediate = SignExtend13(bit_31 << 12 | bit_7 << 11 | bits_30_downto_25 << 5 | bits_11_downto_8 << 1),
-                U_UnsignedImmediate = bits_31_downto_12 << 12,
-                J_SignedImmediate = SignExtend20(bit_31 << 20 | bits_19_downto_12 << 12 | bit_20 << 11 | bits_30_downto_21 << 1),
-                Instruction = Instruction.UNKNOWN
+                I_Immediate = SignExtend12(bits_31_downto_20),
+                S_Immediate = SignExtend12(bits_31_downto_25 << 5 | bits_11_downto_7),
+                B_Immediate = SignExtend13(bit_31 << 12 | bit_7 << 11 | bits_30_downto_25 << 5 | bits_11_downto_8 << 1),
+                U_Immediate = bits_31_downto_12 << 12,
+                J_Immediate = SignExtend20(bit_31 << 20 | bits_19_downto_12 << 12 | bit_20 << 11 | bits_30_downto_21 << 1),
+                Instruction = Instruction.UNKNOWN,
+                Format = Format.UNKNOWN
             };
 
             switch (info.Opcode)
             {
                 case 0b_0110011:
                 {
+                    info.Format = Format.R;
                     switch (info.Funct7 << 3 | info.Funct3)
                     {
                         case 0b_0000000_000: info.Instruction = Instruction.ADD; break;
@@ -133,6 +180,7 @@ namespace Simulator
                 }
                 case 0b_0010011:
                 {
+                    info.Format = Format.I;
                     switch (info.Funct3)
                     {
                         case 0b_000: info.Instruction = Instruction.ADDI; break;
@@ -153,6 +201,7 @@ namespace Simulator
                     break;
                 }
                 case 0b_0000011:
+                    info.Format = Format.I;
                     switch (info.Funct3)
                     {
                         case 0b_000: info.Instruction = Instruction.LB; break;
@@ -163,11 +212,52 @@ namespace Simulator
                     }
                     break;
                 case 0b_0100011:
+                    info.Format = Format.S;
                     switch (info.Funct3)
                     {
                         case 0b_000: info.Instruction = Instruction.SB; break;
                         case 0b_001: info.Instruction = Instruction.SH; break;
                         case 0b_010: info.Instruction = Instruction.SW; break;
+                    }
+                    break;
+                case 0b_1100011:
+                    info.Format = Format.B;
+                    switch (info.Funct3)
+                    {
+                        case 0b_000: info.Instruction = Instruction.BEQ; break;
+                        case 0b_001: info.Instruction = Instruction.BNE; break;
+                        case 0b_100: info.Instruction = Instruction.BLT; break;
+                        case 0b_101: info.Instruction = Instruction.BGE; break;
+                        case 0b_110: info.Instruction = Instruction.BLTU; break;
+                        case 0b_111: info.Instruction = Instruction.BGEU; break;
+                    }
+                    break;
+                case 0b_0110111:
+                    info.Format = Format.U;
+                    switch (info.Funct3)
+                    {
+                        case 0b_000: info.Instruction = Instruction.LUI; break;
+                    }
+                    break;
+                case 0b_0010111:
+                    info.Format = Format.U;
+                    switch (info.Funct3)
+                    {
+                        case 0b_000: info.Instruction = Instruction.AUIPC; break;
+                    }
+                    break;
+                case 0b_1100111:
+                    info.Format = Format.I;
+                    switch (info.Funct3)
+                    {
+                        case 0b_000: info.Instruction = Instruction.JALR; break;
+                    }
+                    break;
+                case 0b_1101111:
+                    info.Format = Format.J;
+                    switch (info.Funct3)
+                    {
+                        case 0b_000: info.Instruction = Instruction.JAL; break;
                     }
                     break;
             }
