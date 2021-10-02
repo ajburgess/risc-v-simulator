@@ -106,24 +106,24 @@ namespace Simulator
         }
     }
 
-    public class Decoder
+    public static class Decoder
     {
-        private Int32 SignExtend12(UInt32 value)
+        public static Int32 SignExtend12(UInt32 value)
         {
             return (Int32)((value & (1 << 11)) != 0 ? value | 0xFFFFF000 : value);
         }
 
-        private Int32 SignExtend13(UInt32 value)
+        public static Int32 SignExtend13(UInt32 value)
         {
             return (Int32)((value & (1 << 12)) != 0 ? value | 0xFFFFE000 : value);
         }
 
-        private Int32 SignExtend20(UInt32 value)
+        public static Int32 SignExtend20(UInt32 value)
         {
             return (Int32)((value & (1 << 19)) != 0 ? value | 0xFFF00000 : value);
         }
 
-        public DecodeInfo Decode(UInt32 instruction)
+        public static DecodeInfo Decode(UInt32 instruction)
         {
             UInt32 bit_31 = (instruction >> 31) & 0b_1;
             UInt32 bits_31_downto_25 = (instruction >> 25) & 0b_111_1111;
