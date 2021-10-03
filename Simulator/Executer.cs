@@ -91,7 +91,31 @@ namespace Simulator
                     UInt16 byteOffset = (UInt16)(3 - (address & 0x03));
                     UInt16 bitsOffset = (UInt16)(byteOffset * 8);
                     UInt32 b = (word >> bitsOffset) & 0xff;
+                    b = (UInt32)SignExtend8(b);
                     registerSet[info.RD] = b;
+                    break;
+                }
+                case Instruction.LHU:
+                {
+                    UInt32 address = (UInt32)(registerSet[info.RS1] + info.I_Immediate);
+                    UInt32 word = memory[address >> 2];
+                    UInt16 halfOffset = (UInt16)(2 - (address & 0x02));
+                    UInt16 bitsOffset = (UInt16)(halfOffset * 8);
+                    UInt32 h = (word >> bitsOffset) & 0xffff;
+                    h = ReverseHalfWord(h);
+                    registerSet[info.RD] = h;
+                    break;
+                }
+                case Instruction.LH:
+                {
+                    UInt32 address = (UInt32)(registerSet[info.RS1] + info.I_Immediate);
+                    UInt32 word = memory[address >> 2];
+                    UInt16 halfOffset = (UInt16)(2 - (address & 0x02));
+                    UInt16 bitsOffset = (UInt16)(halfOffset * 8);
+                    UInt32 h = (word >> bitsOffset) & 0xffff;
+                    h = ReverseHalfWord(h);
+                    h = (UInt32)SignExtend16(h);
+                    registerSet[info.RD] = h;
                     break;
                 }
                 default:
@@ -100,10 +124,32 @@ namespace Simulator
            pc = nextPC;
         }
 
+        public static Int32 SignExtend8(UInt32 value)
+        {
+            return (Int32)((value & (1 << 7)) != 0 ? value | 0xFFFFFF00 : value);
+        }
+
+        public static Int32 SignExtend16(UInt32 value)
+        {
+            return (Int32)((value & (1 << 15)) != 0 ? value | 0xFFFF0000 : value);
+        }
+
         private static UInt32 ReverseEndian(UInt32 word)
         {
             UInt32 newWord = 0x00000000;
             for (int n = 0; n < 4; n++)
+            {
+                Byte b = (Byte)word;
+                newWord = newWord << 8 | b;
+                word = word >> 8;
+            }
+            return newWord;
+        }
+
+        private static UInt32 ReverseHalfWord(UInt32 word)
+        {
+            UInt32 newWord = 0x00000000;
+            for (int n = 0; n < 2; n++)
             {
                 Byte b = (Byte)word;
                 newWord = newWord << 8 | b;

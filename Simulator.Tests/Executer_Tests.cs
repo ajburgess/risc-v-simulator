@@ -156,7 +156,11 @@ namespace Simulator
         [InlineData(Instruction.LBU, 44, 20, "@0040 78 56 34 12", 0x00000078)]
         [InlineData(Instruction.LBU, 44, 20, "@0040 F4 56 34 12", 0x000000F4)]
         [InlineData(Instruction.LB, 44, 20, "@0040 78 56 34 12", 0x00000078)]
-        [InlineData(Instruction.LB, 44, 20, "@0040 FF 56 34 12", 0xFFFFFFF4)]
+        [InlineData(Instruction.LB, 44, 20, "@0040 F4 56 34 12", 0xFFFFFFF4)] // sign extend!
+        [InlineData(Instruction.LHU, 44, 20, "@0040 78 56 34 12", 0x00005678)]
+        [InlineData(Instruction.LHU, 44, 22, "@0040 78 56 34 12", 0x00001234)]
+        [InlineData(Instruction.LH, 44, 20, "@0040 78 56 34 12", 0x00005678)] // Plus sign extend!
+        [InlineData(Instruction.LH, 44, 20, "@0040 78 96 34 12", 0xFFFF9678)] // Plus sign extend!
         public void Execute_Load(Instruction instruction, UInt32 x6, Int32 immediate12bits, string memoryInit, UInt32 x5_expected_value)
         {
             UInt32 pc = 0x1000;
@@ -175,7 +179,7 @@ namespace Simulator
 
             Executer.Execute(info, registers, memory, ref pc);
 
-            Assert.Equal(x5_expected_value, registers.X5);
+            Assert.Equal(x5_expected_value.ToString("X8"), registers.X5.ToString("X8"));
             Assert.Equal((UInt32)0x1004, pc);
         }
     }
