@@ -142,7 +142,7 @@ namespace Simulator
                 Instruction = instruction,
                 RD = 5,
                 RS1 = 6,
-                I_Immediate = Logic.SignExtend12(immediate12bits)
+                I_Immediate = immediate12bits.SignExtend(11)
             };
 
             Executer.Execute(info, registers, null, ref pc);

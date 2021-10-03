@@ -11,6 +11,12 @@ namespace Simulator
             UInt32 rs2_value = registers[info.RS2];
             Byte reg_shift = (Byte)(rs2_value & 0x1F);
             Byte imm_shift = (Byte)(info.I_Immediate & 0x1F);
+            UInt32 address = rs1_value + info.I_Immediate;
+            UInt32 mem_content = memory != null ? memory[address >> 2] : 0x00000000;
+            Byte byte_shift = (Byte)((3 - (address & 0x03)) << 3);
+            Byte half_shift = (Byte)((2 - (address & 0x02)) << 3);
+            Byte mem_byte_content = (Byte)(mem_content >> byte_shift & 0xFF);
+            UInt16 mem_half_content = (UInt16)(mem_content >> half_shift & 0xFFFF);
 
             switch (info.Instruction)
             {
@@ -73,53 +79,27 @@ namespace Simulator
                     break;
                 case Instruction.LW:
                 {
-                    UInt32 address = rs1_value + info.I_Immediate;
-                    UInt32 wordLitteEndian = memory[address >> 2];
-                    UInt32 wordBigEndian = Logic.ReverseEndian(wordLitteEndian);
-                    registers[info.RD] = wordBigEndian;
+                    registers[info.RD] = Logic.ReverseEndian(mem_content);
                     break;
                 }
                 case Instruction.LBU:
                 {
-                    UInt32 address = rs1_value + info.I_Immediate;
-                    UInt32 word = memory[address >> 2];
-                    Byte byteOffset = (Byte)(3 - (address & 0x03));
-                    Byte bitsOffset = (Byte)(byteOffset << 3);
-                    UInt32 b = (word >> bitsOffset) & 0xFF;
-                    registers[info.RD] = b;
+                    registers[info.RD] = mem_byte_content;
                     break;
                 }
                 case Instruction.LB:
                 {
-                    UInt32 address = rs1_value + info.I_Immediate;
-                    UInt32 word = memory[address >> 2];
-                    Byte byteOffset = (Byte)(3 - (address & 0x03));
-                    Byte bitsOffset = (Byte)(byteOffset << 3);
-                    UInt32 b = (word >> bitsOffset) & 0xFF;
-                    b = Logic.SignExtend8(b);
-                    registers[info.RD] = b;
+                    registers[info.RD] = mem_byte_content.SignExtend(7);
                     break;
                 }
                 case Instruction.LHU:
                 {
-                    UInt32 address = (UInt32)(rs1_value + info.I_Immediate);
-                    UInt32 word = memory[address >> 2];
-                    Byte halfOffset = (Byte)(2 - (address & 0x02));
-                    Byte bitsOffset = (Byte)(halfOffset << 3);
-                    UInt16 h = (UInt16)(word >> bitsOffset & 0xffff);
-                    h = Logic.ReverseHalfWord(h);
-                    registers[info.RD] = h;
+                    registers[info.RD] = Logic.ReverseEndian(mem_half_content);
                     break;
                 }
                 case Instruction.LH:
                 {
-                    UInt32 address = (UInt32)(rs1_value + info.I_Immediate);
-                    UInt32 word = memory[address >> 2];
-                    UInt16 halfOffset = (UInt16)(2 - (address & 0x02));
-                    UInt16 bitsOffset = (UInt16)(halfOffset * 8);
-                    UInt16 h = (UInt16)(word >> bitsOffset & 0xffff);
-                    h = Logic.ReverseHalfWord(h);
-                    registers[info.RD] = Logic.SignExtend16(h);
+                    registers[info.RD] = Logic.ReverseEndian(mem_half_content).SignExtend(15);
                     break;
                 }
                 default:

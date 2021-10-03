@@ -30,7 +30,37 @@ namespace Simulator.Tests
         public void Bit_Extracts_Single_Bit_As_Bool(UInt32 word, Byte bit, UInt32 expected)
         {
             UInt32 result = word.Bit(bit);
-            Assert.Equal(expected, result);
+            Assert.Equal(expected.ToString("X8"), result.ToString("X8"));
+        }
+
+        [Theory]
+        [InlineData(0x12345678, 0x78563412)]
+        public void ReverseEndian_Word(UInt32 value, UInt32 expected)
+        {
+            UInt32 result = Logic.ReverseEndian(value);
+            Assert.Equal(expected.ToString("X8"), result.ToString("X8"));
+        }
+
+        [Theory]
+        [InlineData(0x1234, 0x3412)]
+        public void ReverseEndian_HalfWord(UInt16 value, UInt16 expected)
+        {
+            UInt16 result = Logic.ReverseEndian(value);
+            Assert.Equal(expected.ToString("X4"), result.ToString("X4"));
+        }
+
+        [Theory]
+        [InlineData(0x00001234, 15, 0x00001234)]
+        [InlineData(0x00009234, 15, 0xFFFF9234)]
+        [InlineData(0x0000FFFF, 15, 0xFFFFFFFF)]
+        [InlineData(0x00000001, 15, 0x00000001)]
+        [InlineData(0xFF001234, 15, 0x00001234)]
+        [InlineData(0x00007FFF, 15, 0x00007FFF)]
+        [InlineData(0x00004000, 15, 0x00004000)]
+        public void SignExtend(UInt32 value, Byte msb, UInt32 expected)
+        {
+            UInt32 result = value.SignExtend(msb);
+            Assert.Equal(expected.ToString("X8"), result.ToString("X8"));
         }
     }
 }

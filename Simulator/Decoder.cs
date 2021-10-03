@@ -228,11 +228,11 @@ namespace Simulator
                 Funct7 = funct7,
                 RS1 = (Byte)(bits_19_downto_15),
                 RS2 = (Byte)(bits_24_downto_20),
-                I_Immediate = Logic.SignExtend12(bits_31_downto_20),
-                S_Immediate = Logic.SignExtend12(bits_31_downto_25 << 5 | bits_11_downto_7),
-                B_Immediate = Logic.SignExtend13(bit_31 << 12 | bit_7 << 11 | bits_30_downto_25 << 5 | bits_11_downto_8 << 1),
+                I_Immediate = bits_31_downto_20.SignExtend(11),
+                S_Immediate = (bits_31_downto_25 << 5 | bits_11_downto_7).SignExtend(11),
+                B_Immediate = (bit_31 << 12 | bit_7 << 11 | bits_30_downto_25 << 5 | bits_11_downto_8 << 1).SignExtend(12),
                 U_Immediate = bits_31_downto_12 << 12,
-                J_Immediate = Logic.SignExtend20(bit_31 << 20 | bits_19_downto_12 << 12 | bit_20 << 11 | bits_30_downto_21 << 1),
+                J_Immediate = (bit_31 << 20 | bits_19_downto_12 << 12 | bit_20 << 11 | bits_30_downto_21 << 1).SignExtend(19),
                 Instruction = type,
                 Format = format
             };

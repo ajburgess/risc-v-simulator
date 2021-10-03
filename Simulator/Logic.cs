@@ -44,34 +44,33 @@ namespace Simulator
             return word >> downTo & masks[bit - downTo];
         }
 
+        public static UInt16 Bits(this UInt16 word, Byte bit, Byte downTo)
+        {
+            return (UInt16)Bits((UInt32)word, bit, downTo);
+        }
+
         public static UInt32 Bit(this UInt32 word, Byte bit)
         {
             return word.Bits(bit, bit);
         }
 
-        public static UInt32 SignExtend8(UInt32 value)
+        public static UInt32 SignExtend(this UInt32 word, Byte msb)
         {
-            return (value & (1 << 7)) != 0 ? value | 0xFFFFFF00 : value;
+            UInt32 all_ones = 0xFFFFFFFF;
+            if (word.Bit(msb) != 0)
+                return word | all_ones.Bits(31, msb) << msb;
+            else
+                return word & all_ones.Bits(msb, 0);
         }
 
-        public static UInt32 SignExtend12(UInt32 value)
+        public static UInt32 SignExtend(this UInt16 word, Byte msb)
         {
-            return ((value & (1 << 11)) != 0 ? value | 0xFFFFF000 : value);
+            return SignExtend((UInt32)word, msb);
         }
 
-        public static UInt32 SignExtend13(UInt32 value)
+        public static UInt32 SignExtend(this Byte word, Byte msb)
         {
-            return ((value & (1 << 12)) != 0 ? value | 0xFFFFE000 : value);
-        }
-
-        public static UInt32 SignExtend16(UInt32 value)
-        {
-            return (value & (1 << 15)) != 0 ? value | 0xFFFF0000 : value;
-        }
-
-        public static UInt32 SignExtend20(UInt32 value)
-        {
-            return ((value & (1 << 19)) != 0 ? value | 0xFFF00000 : value);
+            return SignExtend((UInt32)word, msb);
         }
 
         public static bool UnsignedLessThan(UInt32 a, UInt32 b)
@@ -84,28 +83,20 @@ namespace Simulator
             return (Int32)a < (Int32)b;
         }
 
-        public static UInt32 ReverseEndian(UInt32 word)
+        public static UInt32 ReverseEndian(UInt32 w)
         {
-            UInt32 newWord = 0x00000000;
-            for (int n = 0; n < 4; n++)
-            {
-                Byte b = (Byte)word;
-                newWord = newWord << 8 | b;
-                word = word >> 8;
-            }
-            return newWord;
+            Byte b1 = (Byte)w.Bits(7, 0);
+            Byte b2 = (Byte)w.Bits(15, 8);
+            Byte b3 = (Byte)w.Bits(23, 16);
+            Byte b4 = (Byte)w.Bits(31, 24);
+            return (UInt32)(b1 << 24 | b2 << 16 | b3 << 8 | b4);
         }
 
-        public static UInt16 ReverseHalfWord(UInt16 halfWord)
+        public static UInt16 ReverseEndian(UInt16 h)
         {
-            UInt16 newHalfWord = 0x0000;
-            for (int n = 0; n < 2; n++)
-            {
-                Byte b = (Byte)halfWord;
-                newHalfWord = (UInt16)(newHalfWord << 8 | b);
-                halfWord = (UInt16)(halfWord >> 8);
-            }
-            return newHalfWord;
+            Byte b1 = (Byte)h.Bits(7, 0);
+            Byte b2 = (Byte)h.Bits(15, 8);
+            return (UInt16)(b1 << 8 | b2);
         }
 
         public static UInt32 ShiftRightArithmetic(UInt32 value, Byte amount)
