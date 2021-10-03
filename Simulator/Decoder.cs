@@ -92,159 +92,150 @@ namespace Simulator
 
     public static class Decoder
     {
-        public static UInt32 SignExtend12(UInt32 value)
-        {
-            return ((value & (1 << 11)) != 0 ? value | 0xFFFFF000 : value);
-        }
-
-        public static UInt32 SignExtend13(UInt32 value)
-        {
-            return ((value & (1 << 12)) != 0 ? value | 0xFFFFE000 : value);
-        }
-
-        public static UInt32 SignExtend20(UInt32 value)
-        {
-            return ((value & (1 << 19)) != 0 ? value | 0xFFF00000 : value);
-        }
-
         public static DecodeInfo Decode(UInt32 instruction)
         {
-            UInt32 bit_31 = (instruction >> 31) & 0b_1;
-            UInt32 bits_31_downto_25 = (instruction >> 25) & 0b_111_1111;
-            UInt32 bits_31_downto_20 = (instruction >> 20) & 0b_1111_1111_1111;
-            UInt32 bits_31_downto_12 = (instruction >> 12) & 0b_1111_1111_1111_1111_1111;
-            UInt32 bits_30_downto_25 = (instruction >> 25) & 0b_11_1111;
-            UInt32 bits_30_downto_21 = (instruction >> 21) & 0b_11_1111_1111;
-            UInt32 bits_24_downto_20 = (instruction >> 20) & 0b_1_1111;
-            UInt32 bit_20 = (instruction >> 20) & 0b_1;
-            UInt32 bits_19_downto_15 = (instruction >> 15) & 0b_1_1111;
-            UInt32 bits_19_downto_12 = (instruction >> 12) & 0b_1111_1111;
-            UInt32 bits_14_downto_12 = (instruction >> 12) & 0b_111;
-            UInt32 bits_11_downto_8 = (instruction >> 8) & 0b_1111;
-            UInt32 bits_11_downto_7 = (instruction >> 7) & 0b_1_1111;
-            UInt32 bit_7 = (instruction >> 7) & 0b_1;
-            UInt32 bits_6_downto_0 = instruction & 0b_111_1111;
+            UInt32 bit_31 = instruction.Bit(31);
+            UInt32 bits_31_downto_25 = instruction.Bits(31, 25);
+            UInt32 bits_31_downto_20 = instruction.Bits(31, 20);
+            UInt32 bits_31_downto_12 = instruction.Bits(31, 12);
+            UInt32 bits_30_downto_25 = instruction.Bits(30, 25);
+            UInt32 bits_30_downto_21 = instruction.Bits(30, 21);
+            UInt32 bits_24_downto_20 = instruction.Bits(24, 20);
+            UInt32 bit_20 = instruction.Bit(20);
+            UInt32 bits_19_downto_15 = instruction.Bits(19, 15);
+            UInt32 bits_19_downto_12 = instruction.Bits(19, 12);
+            UInt32 bits_11_downto_8 = instruction.Bits(11, 8);
+            UInt32 bits_11_downto_7 = instruction.Bits(11, 7);
+            UInt32 bit_7 = instruction.Bit(7);
 
-            DecodeInfo info = new DecodeInfo
-            {
-                Opcode = (Byte)(bits_6_downto_0),
-                RD = (Byte)(bits_11_downto_7),
-                Funct3 = (Byte)(bits_14_downto_12),
-                Funct7 = (Byte)(bits_31_downto_25),
-                RS1 = (Byte)(bits_19_downto_15),
-                RS2 = (Byte)(bits_24_downto_20),
-                I_Immediate = SignExtend12(bits_31_downto_20),
-                S_Immediate = SignExtend12(bits_31_downto_25 << 5 | bits_11_downto_7),
-                B_Immediate = SignExtend13(bit_31 << 12 | bit_7 << 11 | bits_30_downto_25 << 5 | bits_11_downto_8 << 1),
-                U_Immediate = bits_31_downto_12 << 12,
-                J_Immediate = SignExtend20(bit_31 << 20 | bits_19_downto_12 << 12 | bit_20 << 11 | bits_30_downto_21 << 1),
-                Instruction = Instruction.UNKNOWN,
-                Format = Format.UNKNOWN
-            };
+            Byte opcode = (Byte)instruction.Bits(6, 0);
+            Byte funct3 = (Byte)instruction.Bits(14, 12);
+            Byte funct7 = (Byte)(bits_31_downto_25);
+            UInt16 funct7_funct3 = (UInt16)(funct7 << 3 | funct3);
 
-            switch (info.Opcode)
+            Instruction type = Instruction.UNKNOWN;
+            Format format = Format.UNKNOWN;
+
+            switch (opcode)
             {
                 case 0b_0110011:
                 {
-                    info.Format = Format.R;
-                    switch (info.Funct7 << 3 | info.Funct3)
+                    format = Format.R;
+                    switch (funct7_funct3)
                     {
-                        case 0b_0000000_000: info.Instruction = Instruction.ADD; break;
-                        case 0b_0100000_000: info.Instruction = Instruction.SUB; break;
-                        case 0b_0000000_001: info.Instruction = Instruction.SLL; break;
-                        case 0b_0000000_010: info.Instruction = Instruction.SLT; break;
-                        case 0b_0000000_011: info.Instruction = Instruction.SLTU; break;
-                        case 0b_0000000_100: info.Instruction = Instruction.XOR; break;
-                        case 0b_0000000_101: info.Instruction = Instruction.SRL; break;
-                        case 0b_0100000_101: info.Instruction = Instruction.SRA; break;
-                        case 0b_0000000_110: info.Instruction = Instruction.OR; break;
-                        case 0b_0000000_111: info.Instruction = Instruction.AND; break;
+                        case 0b_0000000_000: type = Instruction.ADD; break;
+                        case 0b_0100000_000: type = Instruction.SUB; break;
+                        case 0b_0000000_001: type = Instruction.SLL; break;
+                        case 0b_0000000_010: type = Instruction.SLT; break;
+                        case 0b_0000000_011: type = Instruction.SLTU; break;
+                        case 0b_0000000_100: type = Instruction.XOR; break;
+                        case 0b_0000000_101: type = Instruction.SRL; break;
+                        case 0b_0100000_101: type = Instruction.SRA; break;
+                        case 0b_0000000_110: type = Instruction.OR; break;
+                        case 0b_0000000_111: type = Instruction.AND; break;
                     }
                     break;
                 }
                 case 0b_0010011:
                 {
-                    info.Format = Format.I;
-                    switch (info.Funct3)
+                    format = Format.I;
+                    switch (funct3)
                     {
-                        case 0b_000: info.Instruction = Instruction.ADDI; break;
-                        case 0b_010: info.Instruction = Instruction.SLTI; break;
-                        case 0b_011: info.Instruction = Instruction.SLTIU; break;
-                        case 0b_100: info.Instruction = Instruction.XORI; break;
-                        case 0b_110: info.Instruction = Instruction.ORI; break;
-                        case 0b_111: info.Instruction = Instruction.ANDI; break;
+                        case 0b_000: type = Instruction.ADDI; break;
+                        case 0b_010: type = Instruction.SLTI; break;
+                        case 0b_011: type = Instruction.SLTIU; break;
+                        case 0b_100: type = Instruction.XORI; break;
+                        case 0b_110: type = Instruction.ORI; break;
+                        case 0b_111: type = Instruction.ANDI; break;
                         default:
-                            switch (info.Funct7 << 3 | info.Funct3)
+                            switch (funct7_funct3)
                             {
-                                case 0b_0000000_001: info.Instruction = Instruction.SLLI; break;
-                                case 0b_0000000_101: info.Instruction = Instruction.SRLI; break;
-                                case 0b_0100000_101: info.Instruction = Instruction.SRAI; break;
+                                case 0b_0000000_001: type = Instruction.SLLI; break;
+                                case 0b_0000000_101: type = Instruction.SRLI; break;
+                                case 0b_0100000_101: type = Instruction.SRAI; break;
                             }
                             break;
                     }
                     break;
                 }
                 case 0b_0000011:
-                    info.Format = Format.I;
-                    switch (info.Funct3)
+                    format = Format.I;
+                    switch (funct3)
                     {
-                        case 0b_000: info.Instruction = Instruction.LB; break;
-                        case 0b_010: info.Instruction = Instruction.LH; break;
-                        case 0b_011: info.Instruction = Instruction.LW; break;
-                        case 0b_100: info.Instruction = Instruction.LBU; break;
-                        case 0b_110: info.Instruction = Instruction.LHU; break;
+                        case 0b_000: type = Instruction.LB; break;
+                        case 0b_010: type = Instruction.LH; break;
+                        case 0b_011: type = Instruction.LW; break;
+                        case 0b_100: type = Instruction.LBU; break;
+                        case 0b_110: type = Instruction.LHU; break;
                     }
                     break;
                 case 0b_0100011:
-                    info.Format = Format.S;
-                    switch (info.Funct3)
+                    format = Format.S;
+                    switch (funct3)
                     {
-                        case 0b_000: info.Instruction = Instruction.SB; break;
-                        case 0b_001: info.Instruction = Instruction.SH; break;
-                        case 0b_010: info.Instruction = Instruction.SW; break;
+                        case 0b_000: type = Instruction.SB; break;
+                        case 0b_001: type = Instruction.SH; break;
+                        case 0b_010: type = Instruction.SW; break;
                     }
                     break;
                 case 0b_1100011:
-                    info.Format = Format.B;
-                    switch (info.Funct3)
+                    format = Format.B;
+                    switch (funct3)
                     {
-                        case 0b_000: info.Instruction = Instruction.BEQ; break;
-                        case 0b_001: info.Instruction = Instruction.BNE; break;
-                        case 0b_100: info.Instruction = Instruction.BLT; break;
-                        case 0b_101: info.Instruction = Instruction.BGE; break;
-                        case 0b_110: info.Instruction = Instruction.BLTU; break;
-                        case 0b_111: info.Instruction = Instruction.BGEU; break;
+                        case 0b_000: type = Instruction.BEQ; break;
+                        case 0b_001: type = Instruction.BNE; break;
+                        case 0b_100: type = Instruction.BLT; break;
+                        case 0b_101: type = Instruction.BGE; break;
+                        case 0b_110: type = Instruction.BLTU; break;
+                        case 0b_111: type = Instruction.BGEU; break;
                     }
                     break;
                 case 0b_0110111:
-                    info.Format = Format.U;
-                    switch (info.Funct3)
+                    format = Format.U;
+                    switch (funct3)
                     {
-                        case 0b_000: info.Instruction = Instruction.LUI; break;
+                        case 0b_000: type = Instruction.LUI; break;
                     }
                     break;
                 case 0b_0010111:
-                    info.Format = Format.U;
-                    switch (info.Funct3)
+                    format = Format.U;
+                    switch (funct3)
                     {
-                        case 0b_000: info.Instruction = Instruction.AUIPC; break;
+                        case 0b_000: type = Instruction.AUIPC; break;
                     }
                     break;
                 case 0b_1100111:
-                    info.Format = Format.I;
-                    switch (info.Funct3)
+                    format = Format.I;
+                    switch (funct3)
                     {
-                        case 0b_000: info.Instruction = Instruction.JALR; break;
+                        case 0b_000: type = Instruction.JALR; break;
                     }
                     break;
                 case 0b_1101111:
-                    info.Format = Format.J;
-                    switch (info.Funct3)
+                    format = Format.J;
+                    switch (funct3)
                     {
-                        case 0b_000: info.Instruction = Instruction.JAL; break;
+                        case 0b_000: type = Instruction.JAL; break;
                     }
                     break;
             }
+
+            DecodeInfo info = new DecodeInfo
+            {
+                Opcode = opcode,
+                RD = (Byte)(bits_11_downto_7),
+                Funct3 = funct3,
+                Funct7 = funct7,
+                RS1 = (Byte)(bits_19_downto_15),
+                RS2 = (Byte)(bits_24_downto_20),
+                I_Immediate = Logic.SignExtend12(bits_31_downto_20),
+                S_Immediate = Logic.SignExtend12(bits_31_downto_25 << 5 | bits_11_downto_7),
+                B_Immediate = Logic.SignExtend13(bit_31 << 12 | bit_7 << 11 | bits_30_downto_25 << 5 | bits_11_downto_8 << 1),
+                U_Immediate = bits_31_downto_12 << 12,
+                J_Immediate = Logic.SignExtend20(bit_31 << 20 | bits_19_downto_12 << 12 | bit_20 << 11 | bits_30_downto_21 << 1),
+                Instruction = type,
+                Format = format
+            };
 
             return info;
         }
