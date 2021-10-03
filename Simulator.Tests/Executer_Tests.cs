@@ -245,6 +245,7 @@ namespace Simulator
             DecodeInfo info = new DecodeInfo
             {
                 Instruction = instruction,
+                Format = Format.B,
                 RS1 = 5,
                 RS2 = 6,
                 B_Immediate = (UInt32)immediate
@@ -257,7 +258,7 @@ namespace Simulator
 
         [Theory]
         [InlineData(Instruction.LUI, 0x12345, 0xABCDEF99, 0x12345000)]
-        public void Execute_Upper_Immediate(Instruction instruction, UInt32 immediate, UInt32 x5, UInt32 expected_x5)
+        public void Execute_LUI(Instruction instruction, UInt32 immediate, UInt32 x5, UInt32 expected_x5)
         {
             UInt32 pc = 0x1000;
             RegisterSet registers = new RegisterSet();
@@ -267,13 +268,78 @@ namespace Simulator
             {
                 Instruction = instruction,
                 RD = 5,
-                U_Immediate = (UInt32)immediate
+                U_Immediate = immediate
             };
 
             Executer.Execute(info, registers, null, ref pc);
 
             Assert.Equal(expected_x5.ToString("X8"), registers.X5.ToString("X8"));
             Assert.Equal((UInt32)0x1004, pc);
+        }
+
+        [Theory]
+        [InlineData(Instruction.AUIPC, 0x12345, 0x81000AAA, 0xDEADBEEF, 0x93345AAA)]
+        public void Execute_AUIPC(Instruction instruction, UInt32 immediate, UInt32 pc_before, UInt32 x5_before, UInt32 expected_x5)
+        {
+            UInt32 pc = pc_before;
+            RegisterSet registers = new RegisterSet();
+            registers.X5 = x5_before;
+
+            DecodeInfo info = new DecodeInfo
+            {
+                Instruction = instruction,
+                RD = 5,
+                U_Immediate = immediate
+            };
+
+            Executer.Execute(info, registers, null, ref pc);
+
+            Assert.Equal(expected_x5.ToString("X8"), registers.X5.ToString("X8"));
+            Assert.Equal(pc_before + 4, pc);
+        }
+
+        [Theory]
+        [InlineData(0x04000, 0x10001234, 0x10009234, 0x10001238)]
+        public void Execute_JAL(UInt32 immediate, UInt32 previousPC, UInt32 expectedPC, UInt32 expected_x5)
+        {
+            UInt32 pc = previousPC;
+            RegisterSet registers = new RegisterSet();
+
+            DecodeInfo info = new DecodeInfo
+            {
+                Instruction = Instruction.JAL,
+                Format = Format.J,
+                RD = 5,
+                J_Immediate = immediate
+            };
+
+            Executer.Execute(info, registers, null, ref pc);
+
+            Assert.Equal(expected_x5.ToString("X8"), registers.X5.ToString("X8"));
+            Assert.Equal(expectedPC.ToString("X8"), pc.ToString("X8"));
+        }
+
+        [Theory]
+        [InlineData(0x400, 0x11223344, 0x10001234, 0x11223744, 0x10001238)]
+        public void Execute_JALR(UInt32 immediate, UInt32 x6, UInt32 previousPC, UInt32 expectedPC, UInt32 expected_x5)
+        {
+            UInt32 pc = previousPC;
+            RegisterSet registers = new RegisterSet();
+            registers.X6 = x6;
+
+            DecodeInfo info = new DecodeInfo
+            {
+                Instruction = Instruction.JALR,
+                Format = Format.I,
+                RD = 5,
+                RS1 = 6,
+                I_Immediate = immediate
+            };
+
+            Executer.Execute(info, registers, null, ref pc);
+
+            Assert.Equal(expected_x5.ToString("X8"), registers.X5.ToString("X8"));
+            Assert.Equal(expectedPC.ToString("X8"), pc.ToString("X8"));
         }
 
         // --------------------------------------------------------------------

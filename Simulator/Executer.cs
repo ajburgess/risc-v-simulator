@@ -131,10 +131,28 @@ namespace Simulator
                 case Instruction.LUI:
                     registers[info.RD] = info.U_Immediate << 12;
                     break;
+                case Instruction.AUIPC:
+                    registers[info.RD] = (UInt32)(info.U_Immediate << 12) + pc;
+                    break;
+                case Instruction.JAL:
+                    registers[info.RD] = pc + 4;
+                    willBranch = true;
+                    break;
+                case Instruction.JALR:
+                    registers[info.RD] = pc + 4;
+                    willBranch = true;
+                    break;
                 default:
                     throw new Exception($"Unknown instruction: {info.Instruction}");
-           }
-           pc = willBranch ? pc + (info.B_Immediate << 1) : pc + 4;
+            }
+            if (willBranch && info.Format == Format.B)
+                pc = pc + (info.B_Immediate << 1);
+            else if (willBranch && info.Format == Format.J)
+                pc = pc + (info.J_Immediate << 1);
+            else if (willBranch && info.Format == Format.I)
+                pc = rs1_value + info.I_Immediate;
+            else
+                pc = pc + 4;
         }
     }
 }
