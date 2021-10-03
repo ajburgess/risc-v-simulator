@@ -105,7 +105,7 @@ namespace Simulator
                 Instruction = instruction,
                 RD = 5,
                 RS1 = 6,
-                I_Immediate = immediate12bits
+                I_Immediate = (UInt32)immediate12bits
             };
 
             Executer.Execute(info, registers, null, ref pc);
@@ -174,7 +174,7 @@ namespace Simulator
                 Instruction = instruction,
                 RD = 5,
                 RS1 = 6,
-                I_Immediate = immediate12bits
+                I_Immediate = (UInt32)immediate12bits
             };
 
             Executer.Execute(info, registers, memory, ref pc);

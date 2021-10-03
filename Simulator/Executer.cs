@@ -4,118 +4,117 @@ namespace Simulator
 {
     public static class Executer
     {
-        public static void Execute(DecodeInfo info, RegisterSet registerSet, WordMemory memory, ref UInt32 pc)
+        public static void Execute(DecodeInfo info, RegisterSet registers, WordMemory memory, ref UInt32 pc)
         {
             UInt32 nextPC = pc + 4;
             switch (info.Instruction)
             {
                 case Instruction.ADD:
-                    registerSet[info.RD] = registerSet[info.RS1] + registerSet[info.RS2];
+                    registers[info.RD] = registers[info.RS1] + registers[info.RS2];
                     break;
                 case Instruction.SUB:
-                    registerSet[info.RD] = registerSet[info.RS1] - registerSet[info.RS2];
+                    registers[info.RD] = registers[info.RS1] - registers[info.RS2];
                     break;
                 case Instruction.SLL:
-                    registerSet[info.RD] = registerSet[info.RS1] << (UInt16)(registerSet[info.RS2] & 0x1F);
+                    registers[info.RD] = registers[info.RS1] << ((Byte)registers[info.RS2] & 0x1F);
                     break;
                 case Instruction.SRL:
-                    registerSet[info.RD] = registerSet[info.RS1] >> (UInt16)(registerSet[info.RS2] & 0x1F);
+                    registers[info.RD] = registers[info.RS1] >> (Byte)(registers[info.RS2] & 0x1F);
                     break;
                 case Instruction.SRA:
-                    registerSet[info.RD] = ShiftRightArithmetic(registerSet[info.RS1], (UInt16)(registerSet[info.RS2] & 0x1F));
+                    registers[info.RD] = ShiftRightArithmetic(registers[info.RS1], (Byte)(registers[info.RS2] & 0x1F));
                     break;
                 case Instruction.OR:
-                    registerSet[info.RD] = registerSet[info.RS1] | registerSet[info.RS2];
+                    registers[info.RD] = registers[info.RS1] | registers[info.RS2];
                     break;
                 case Instruction.AND:
-                    registerSet[info.RD] = registerSet[info.RS1] & registerSet[info.RS2];
+                    registers[info.RD] = registers[info.RS1] & registers[info.RS2];
                     break;
                 case Instruction.XOR:
-                    registerSet[info.RD] = registerSet[info.RS1] ^ registerSet[info.RS2];
+                    registers[info.RD] = registers[info.RS1] ^ registers[info.RS2];
                     break;
                 case Instruction.SLTU:
-                    registerSet[info.RD] = registerSet[info.RS1] < registerSet[info.RS2] ? 1u : 0;
+                    registers[info.RD] = UnsignedLessThan(registers[info.RS1], registers[info.RS2]) ? 1u : 0;
                     break;
                 case Instruction.SLT:
-                    registerSet[info.RD] = (Int32)registerSet[info.RS1] < (Int32)registerSet[info.RS2] ? 1u : 0;
+                    registers[info.RD] = SignedLessThan(registers[info.RS1], registers[info.RS2]) ? 1u : 0;
                     break;
                 case Instruction.ADDI:
-                    registerSet[info.RD] = (UInt32)((Int32)registerSet[info.RS1] + info.I_Immediate);
+                    registers[info.RD] = registers[info.RS1] + info.I_Immediate;
                     break;
                 case Instruction.ANDI:
-                    registerSet[info.RD] = registerSet[info.RS1] & (UInt32)info.I_Immediate;
+                    registers[info.RD] = registers[info.RS1] & info.I_Immediate;
                     break;
                 case Instruction.ORI:
-                    registerSet[info.RD] = registerSet[info.RS1] | (UInt32)info.I_Immediate;
+                    registers[info.RD] = registers[info.RS1] | info.I_Immediate;
                     break;
                 case Instruction.XORI:
-                    registerSet[info.RD] = registerSet[info.RS1] ^ (UInt32)info.I_Immediate;
+                    registers[info.RD] = registers[info.RS1] ^ info.I_Immediate;
                     break;
                  case Instruction.SLLI:
-                    registerSet[info.RD] = registerSet[info.RS1] << (UInt16)(info.I_Immediate & 0x1F);
+                    registers[info.RD] = registers[info.RS1] << (Byte)(info.I_Immediate & 0x1F);
                     break;
                  case Instruction.SRLI:
-                    registerSet[info.RD] = registerSet[info.RS1] >> (UInt16)(info.I_Immediate & 0x1F);
+                    registers[info.RD] = registers[info.RS1] >> (Byte)(info.I_Immediate & 0x1F);
                     break;
                  case Instruction.SRAI:
-                    registerSet[info.RD] = ShiftRightArithmetic(registerSet[info.RS1], (UInt16)(info.I_Immediate & 0x1F));
+                    registers[info.RD] = ShiftRightArithmetic(registers[info.RS1], (Byte)(info.I_Immediate & 0x1F));
                     break;
                 case Instruction.SLTIU:
-                    registerSet[info.RD] = registerSet[info.RS1] < (UInt32)info.I_Immediate ? 1u : 0;
+                    registers[info.RD] = UnsignedLessThan(registers[info.RS1], info.I_Immediate) ? 1u : 0;
                     break;
                 case Instruction.SLTI:
-                    registerSet[info.RD] = (Int32)registerSet[info.RS1] < info.I_Immediate ? 1u : 0;
+                    registers[info.RD] = SignedLessThan(registers[info.RS1], info.I_Immediate) ? 1u : 0;
                     break;
                 case Instruction.LW:
                 {
-                    UInt32 address = (UInt32)(registerSet[info.RS1] + info.I_Immediate);
+                    UInt32 address = registers[info.RS1] + info.I_Immediate;
                     UInt32 wordLitteEndian = memory[address >> 2];
                     UInt32 wordBigEndian = ReverseEndian(wordLitteEndian);
-                    registerSet[info.RD] = wordBigEndian;
+                    registers[info.RD] = wordBigEndian;
                     break;
                 }
                 case Instruction.LBU:
                 {
-                    UInt32 address = (UInt32)(registerSet[info.RS1] + info.I_Immediate);
+                    UInt32 address = registers[info.RS1] + info.I_Immediate;
                     UInt32 word = memory[address >> 2];
-                    UInt16 byteOffset = (UInt16)(3 - (address & 0x03));
-                    UInt16 bitsOffset = (UInt16)(byteOffset * 8);
-                    UInt32 b = (word >> bitsOffset) & 0xff;
-                    registerSet[info.RD] = b;
+                    Byte byteOffset = (Byte)(3 - (address & 0x03));
+                    Byte bitsOffset = (Byte)(byteOffset << 3);
+                    UInt32 b = (word >> bitsOffset) & 0xFF;
+                    registers[info.RD] = b;
                     break;
                 }
                 case Instruction.LB:
                 {
-                    UInt32 address = (UInt32)(registerSet[info.RS1] + info.I_Immediate);
+                    UInt32 address = registers[info.RS1] + info.I_Immediate;
                     UInt32 word = memory[address >> 2];
-                    UInt16 byteOffset = (UInt16)(3 - (address & 0x03));
-                    UInt16 bitsOffset = (UInt16)(byteOffset * 8);
-                    UInt32 b = (word >> bitsOffset) & 0xff;
-                    b = (UInt32)SignExtend8(b);
-                    registerSet[info.RD] = b;
+                    Byte byteOffset = (Byte)(3 - (address & 0x03));
+                    Byte bitsOffset = (Byte)(byteOffset << 3);
+                    UInt32 b = (word >> bitsOffset) & 0xFF;
+                    b = SignExtend8(b);
+                    registers[info.RD] = b;
                     break;
                 }
                 case Instruction.LHU:
                 {
-                    UInt32 address = (UInt32)(registerSet[info.RS1] + info.I_Immediate);
+                    UInt32 address = (UInt32)(registers[info.RS1] + info.I_Immediate);
                     UInt32 word = memory[address >> 2];
-                    UInt16 halfOffset = (UInt16)(2 - (address & 0x02));
-                    UInt16 bitsOffset = (UInt16)(halfOffset * 8);
-                    UInt32 h = (word >> bitsOffset) & 0xffff;
+                    Byte halfOffset = (Byte)(2 - (address & 0x02));
+                    Byte bitsOffset = (Byte)(halfOffset << 3);
+                    UInt16 h = (UInt16)(word >> bitsOffset & 0xffff);
                     h = ReverseHalfWord(h);
-                    registerSet[info.RD] = h;
+                    registers[info.RD] = h;
                     break;
                 }
                 case Instruction.LH:
                 {
-                    UInt32 address = (UInt32)(registerSet[info.RS1] + info.I_Immediate);
+                    UInt32 address = (UInt32)(registers[info.RS1] + info.I_Immediate);
                     UInt32 word = memory[address >> 2];
                     UInt16 halfOffset = (UInt16)(2 - (address & 0x02));
                     UInt16 bitsOffset = (UInt16)(halfOffset * 8);
-                    UInt32 h = (word >> bitsOffset) & 0xffff;
+                    UInt16 h = (UInt16)(word >> bitsOffset & 0xffff);
                     h = ReverseHalfWord(h);
-                    h = (UInt32)SignExtend16(h);
-                    registerSet[info.RD] = h;
+                    registers[info.RD] = SignExtend16(h);
                     break;
                 }
                 default:
@@ -124,14 +123,24 @@ namespace Simulator
            pc = nextPC;
         }
 
-        public static Int32 SignExtend8(UInt32 value)
+        public static bool UnsignedLessThan(UInt32 a, UInt32 b)
         {
-            return (Int32)((value & (1 << 7)) != 0 ? value | 0xFFFFFF00 : value);
+            return a < b;
         }
 
-        public static Int32 SignExtend16(UInt32 value)
+        public static bool SignedLessThan(UInt32 a, UInt32 b)
         {
-            return (Int32)((value & (1 << 15)) != 0 ? value | 0xFFFF0000 : value);
+            return (Int32)a < (Int32)b;
+        }
+
+        public static UInt32 SignExtend8(UInt32 value)
+        {
+            return (value & (1 << 7)) != 0 ? value | 0xFFFFFF00 : value;
+        }
+
+        public static UInt32 SignExtend16(UInt32 value)
+        {
+            return (value & (1 << 15)) != 0 ? value | 0xFFFF0000 : value;
         }
 
         private static UInt32 ReverseEndian(UInt32 word)
@@ -146,22 +155,22 @@ namespace Simulator
             return newWord;
         }
 
-        private static UInt32 ReverseHalfWord(UInt32 word)
+        private static UInt16 ReverseHalfWord(UInt16 halfWord)
         {
-            UInt32 newWord = 0x00000000;
+            UInt16 newHalfWord = 0x0000;
             for (int n = 0; n < 2; n++)
             {
-                Byte b = (Byte)word;
-                newWord = newWord << 8 | b;
-                word = word >> 8;
+                Byte b = (Byte)halfWord;
+                newHalfWord = (UInt16)(newHalfWord << 8 | b);
+                halfWord = (UInt16)(halfWord >> 8);
             }
-            return newWord;
+            return newHalfWord;
         }
 
-        private static UInt32 ShiftRightArithmetic(UInt32 value, UInt16 amount)
+        private static UInt32 ShiftRightArithmetic(UInt32 value, Byte amount)
         {
             UInt32 msb = value & 0x80000000;
-            for (int i = 0; i < amount; i++)
+            for (Byte i = 0; i < amount; i++)
             {
                 value = msb | (value >> 1);
             }

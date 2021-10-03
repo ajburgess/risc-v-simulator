@@ -50,7 +50,7 @@ namespace Simulator.Tests
         public void Decode_I_Format_Extracts_Immediate_WithSignExtension(UInt32 instruction, Int32 immediate)
         {
             DecodeInfo info = Decoder.Decode(instruction);
-            Assert.Equal(immediate, info.I_Immediate);
+            Assert.Equal(immediate, (Int32)info.I_Immediate);
         }
 
         [Theory]
@@ -81,7 +81,7 @@ namespace Simulator.Tests
         {
             DecodeInfo info = Decoder.Decode(instruction);
             info.Format = Format.S;
-            Assert.Equal(immediate, info.S_Immediate);
+            Assert.Equal(immediate, (Int32)info.S_Immediate);
         }
 
         [Theory]
@@ -97,7 +97,7 @@ namespace Simulator.Tests
         public void Decode_B_Format_Extracts_Immediate_WithSignExtension(UInt32 instruction, Int32 immediate)
         {
             DecodeInfo info = Decoder.Decode(instruction);
-            Assert.Equal(immediate, info.B_Immediate);
+            Assert.Equal(immediate, (Int32)info.B_Immediate);
         }
 
         [Theory]
@@ -119,7 +119,7 @@ namespace Simulator.Tests
         public void Decode_J_Format_Extracts_Immediate(UInt32 instruction, Int32 immediate)
         {
             DecodeInfo info = Decoder.Decode(instruction);
-            Assert.Equal(immediate, info.J_Immediate);
+            Assert.Equal(immediate, (Int32)info.J_Immediate);
         }
 
         [Theory]
@@ -169,7 +169,7 @@ namespace Simulator.Tests
 
         [Theory]
         [InlineData(Instruction.ADD, 5, 6, 7, @"^add\s+x5,\s?x6,\s?x7$")]
-        public void DecodeInfo_R_Format_ToString(Instruction instruction, UInt16 rd, UInt16 rs1, UInt16 rs2, string expected)
+        public void DecodeInfo_R_Format_ToString(Instruction instruction, Byte rd, Byte rs1, Byte rs2, string expected)
         {
             DecodeInfo info = new DecodeInfo
             {
@@ -186,7 +186,7 @@ namespace Simulator.Tests
         [Theory]
         [InlineData(Instruction.ADDI, 5, 6, 50, @"^addi\s+x5,\s?x6,\s?50$")]
         [InlineData(Instruction.ADDI, 5, 6, -50, @"^addi\s+x5,\s?x6,\s?-50$")]
-        public void DecodeInfo_I_Format_ToString(Instruction instruction, UInt16 rd, UInt16 rs1, Int32 immediate, string expected)
+        public void DecodeInfo_I_Format_ToString(Instruction instruction, Byte rd, Byte rs1, Int32 immediate, string expected)
         {
             DecodeInfo info = new DecodeInfo
             {
@@ -194,7 +194,7 @@ namespace Simulator.Tests
                 Instruction = instruction,
                 RD = rd,
                 RS1 = rs1,
-                I_Immediate = immediate
+                I_Immediate = (UInt32)immediate
             };
             string text = info.ToString();
             Assert.Matches(expected, text);
@@ -202,7 +202,7 @@ namespace Simulator.Tests
 
         [Theory]
         [InlineData(Instruction.SW, 5, 6, -50, @"^sw\s+x5,\s?\(-50\)x6$")]
-        public void DecodeInfo_S_Format_ToString(Instruction instruction, UInt16 rd, UInt16 rs1, Int32 immediate, string expected)
+        public void DecodeInfo_S_Format_ToString(Instruction instruction, Byte rd, Byte rs1, Int32 immediate, string expected)
         {
             DecodeInfo info = new DecodeInfo
             {
@@ -210,7 +210,7 @@ namespace Simulator.Tests
                 Instruction = instruction,
                 RD = rd,
                 RS1 = rs1,
-                S_Immediate = immediate
+                S_Immediate = (UInt32)immediate
             };
             string text = info.ToString();
             Assert.Matches(expected, text);
@@ -219,7 +219,7 @@ namespace Simulator.Tests
         [Theory]
         [InlineData(Instruction.BEQ, 5, 6, 8, @"^beq\s+x5,\s?x6,\s?16$")]
         [InlineData(Instruction.BEQ, 5, 6, -8, @"^beq\s+x5,\s?x6,\s?-16$")]
-        public void DecodeInfo_B_Format_ToString_No_PC(Instruction instruction, UInt16 rd, UInt16 rs1, Int32 immediate, string expected)
+        public void DecodeInfo_B_Format_ToString_No_PC(Instruction instruction, Byte rd, Byte rs1, Int32 immediate, string expected)
         {
             DecodeInfo info = new DecodeInfo
             {
@@ -227,7 +227,7 @@ namespace Simulator.Tests
                 Instruction = instruction,
                 RD = rd,
                 RS1 = rs1,
-                B_Immediate = immediate
+                B_Immediate = (UInt32)immediate
             };
             string text = info.ToString();
             Assert.Matches(expected, text);
@@ -236,7 +236,7 @@ namespace Simulator.Tests
         [Theory]
         [InlineData(Instruction.BEQ, 5, 6, 8, 0x80001000, @"^beq\s+x5,\s?x6,\s?16\s+#\s+0x80001010$")]
         [InlineData(Instruction.BEQ, 5, 6, -8, 0x80001000, @"^beq\s+x5,\s?x6,\s?-16\s+#\s+0x80000FF0$")]
-        public void DecodeInfo_B_Format_ToString_With_PC(Instruction instruction, UInt16 rd, UInt16 rs1, Int32 immediate, UInt32 pc, string expected)
+        public void DecodeInfo_B_Format_ToString_With_PC(Instruction instruction, Byte rd, Byte rs1, Int32 immediate, UInt32 pc, string expected)
         {
             DecodeInfo info = new DecodeInfo
             {
@@ -244,7 +244,7 @@ namespace Simulator.Tests
                 Instruction = instruction,
                 RD = rd,
                 RS1 = rs1,
-                B_Immediate = immediate
+                B_Immediate = (UInt32)immediate
             };
             string text = info.ToString(pc);
             Assert.Matches(expected, text);
@@ -252,7 +252,7 @@ namespace Simulator.Tests
 
         [Theory]
         [InlineData(Instruction.LUI, 5, 0x12345000, @"^lui\s+x5,\s?0x12345\s+#\s+0x12345000$")]
-        public void DecodeInfo_U_Format_ToString(Instruction instruction, UInt16 rd, UInt32 immediate, string expected)
+        public void DecodeInfo_U_Format_ToString(Instruction instruction, Byte rd, UInt32 immediate, string expected)
         {
             DecodeInfo info = new DecodeInfo
             {
@@ -267,14 +267,14 @@ namespace Simulator.Tests
 
         [Theory]
         [InlineData(Instruction.JAL, 5, 8, @"^jal\s+x5,\s?16$")]
-        public void DecodeInfo_J_Format_ToString_No_PC(Instruction instruction, UInt16 rd, Int32 immediate, string expected)
+        public void DecodeInfo_J_Format_ToString_No_PC(Instruction instruction, Byte rd, Int32 immediate, string expected)
         {
             DecodeInfo info = new DecodeInfo
             {
                 Format = Format.J,
                 Instruction = instruction,
                 RD = rd,
-                J_Immediate = immediate
+                J_Immediate = (UInt32)immediate
             };
             string text = info.ToString();
             Assert.Matches(expected, text);

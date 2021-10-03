@@ -2,12 +2,12 @@ using System;
 
 namespace Simulator
 {
-    public enum Format
+    public enum Format : Byte
     {
         UNKNOWN, R, I, S, B, U, J
     }
 
-    public enum Instruction
+    public enum Instruction : Byte
     {
         UNKNOWN,
         NOP,
@@ -52,17 +52,17 @@ namespace Simulator
 
     public class DecodeInfo
     {
-        public UInt16 Opcode { get; set; }
-        public UInt16 Funct3 { get; set; }
-        public UInt16 Funct7 { get; set; }
-        public UInt16 RD { get; set; }
-        public UInt16 RS1 { get; set; }
-        public UInt16 RS2 { get; set; }
-        public Int32 I_Immediate { get; set; } // 12 bits
-        public Int32 S_Immediate { get; set; } // 12 bits
-        public Int32 B_Immediate { get; set; } // 13 bits
-        public UInt32 U_Immediate { get; set; } // 32 bits
-        public Int32 J_Immediate { get; set; } // 21 bits
+        public Byte Opcode { get; set; } // 7 bits
+        public Byte Funct3 { get; set; } // 3 bits
+        public Byte Funct7 { get; set; } // 7 bits
+        public Byte RD { get; set; } // 5 bits
+        public Byte RS1 { get; set; } // 5 bits
+        public Byte RS2 { get; set; } // 5 bits
+        public UInt32 I_Immediate { get; set; } // 12 bits
+        public UInt32 S_Immediate { get; set; } // 12 bits
+        public UInt32 B_Immediate { get; set; } // 13 bits
+        public UInt32 U_Immediate { get; set; } // 20 bits
+        public UInt32 J_Immediate { get; set; } // 21 bits
         public Instruction Instruction { get; set; }
         public Format Format { get; set; }
 
@@ -73,8 +73,8 @@ namespace Simulator
             {
                 case Format.B:
                 {
-                    Int32 offset = (B_Immediate << 1);
-                    UInt32 destination_pc = (UInt32)(pc + offset);
+                    UInt32 offset = ((UInt32)B_Immediate << 1);
+                    UInt32 destination_pc = pc + offset;
                     text += $" # 0x{destination_pc:X8}";
                     break;
                 }
@@ -91,15 +91,15 @@ namespace Simulator
                 case Format.R:
                     return $"{instruction} x{RD},x{RS1},x{RS2}";
                 case Format.I:
-                    return $"{instruction} x{RD},x{RS1},{I_Immediate}";
+                    return $"{instruction} x{RD},x{RS1},{(Int32)I_Immediate}";
                 case Format.S:
-                    return $"{instruction} x{RD},({S_Immediate})x{RS1}";
+                    return $"{instruction} x{RD},({(Int32)S_Immediate})x{RS1}";
                 case Format.B:
-                    return $"{instruction} x{RD},x{RS1},{B_Immediate * 2}";
+                    return $"{instruction} x{RD},x{RS1},{(Int32)B_Immediate * 2}";
                 case Format.U:
                     return $"{instruction} x{RD},0x{(U_Immediate >> 12):X5} # 0x{U_Immediate:X8}";
                 case Format.J:
-                    return $"{instruction} x{RD},{J_Immediate * 2}";
+                    return $"{instruction} x{RD},{(Int32)J_Immediate * 2}";
                 default:
                     return "";
             }
@@ -108,19 +108,19 @@ namespace Simulator
 
     public static class Decoder
     {
-        public static Int32 SignExtend12(UInt32 value)
+        public static UInt32 SignExtend12(UInt32 value)
         {
-            return (Int32)((value & (1 << 11)) != 0 ? value | 0xFFFFF000 : value);
+            return ((value & (1 << 11)) != 0 ? value | 0xFFFFF000 : value);
         }
 
-        public static Int32 SignExtend13(UInt32 value)
+        public static UInt32 SignExtend13(UInt32 value)
         {
-            return (Int32)((value & (1 << 12)) != 0 ? value | 0xFFFFE000 : value);
+            return ((value & (1 << 12)) != 0 ? value | 0xFFFFE000 : value);
         }
 
-        public static Int32 SignExtend20(UInt32 value)
+        public static UInt32 SignExtend20(UInt32 value)
         {
-            return (Int32)((value & (1 << 19)) != 0 ? value | 0xFFF00000 : value);
+            return ((value & (1 << 19)) != 0 ? value | 0xFFF00000 : value);
         }
 
         public static DecodeInfo Decode(UInt32 instruction)
@@ -143,12 +143,12 @@ namespace Simulator
 
             DecodeInfo info = new DecodeInfo
             {
-                Opcode = (UInt16)(bits_6_downto_0),
-                RD = (UInt16)(bits_11_downto_7),
-                Funct3 = (UInt16)(bits_14_downto_12),
-                Funct7 = (UInt16)(bits_31_downto_25),
-                RS1 = (UInt16)(bits_19_downto_15),
-                RS2 = (UInt16)(bits_24_downto_20),
+                Opcode = (Byte)(bits_6_downto_0),
+                RD = (Byte)(bits_11_downto_7),
+                Funct3 = (Byte)(bits_14_downto_12),
+                Funct7 = (Byte)(bits_31_downto_25),
+                RS1 = (Byte)(bits_19_downto_15),
+                RS2 = (Byte)(bits_24_downto_20),
                 I_Immediate = SignExtend12(bits_31_downto_20),
                 S_Immediate = SignExtend12(bits_31_downto_25 << 5 | bits_11_downto_7),
                 B_Immediate = SignExtend13(bit_31 << 12 | bit_7 << 11 | bits_30_downto_25 << 5 | bits_11_downto_8 << 1),
