@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text;
 
 namespace Simulator
 {
@@ -43,6 +44,26 @@ namespace Simulator
                 }
                 words[wordAddress] = word;
             }
+        }
+
+        private Byte GetByte(UInt32 address)
+        {
+            UInt32 word = words[address >> 2];
+            Byte byte_shift = (Byte)((3 - (address & 0x03)) << 3);
+            return (Byte)(word >> byte_shift);
+        }
+
+        public string Dump(UInt32 startAddress, UInt32 size)
+        {
+            StringBuilder sb = new StringBuilder();
+            sb.Append("@");
+            sb.Append(startAddress.ToString("X4"));
+            for (UInt32 address = startAddress; address < startAddress + size; address++)
+            {
+                sb.Append(" ");
+                sb.Append(GetByte(address).ToString("X2"));
+            }
+            return sb.ToString();
         }
 
         private UInt32 ParseHex(string hex)

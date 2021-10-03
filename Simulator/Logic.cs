@@ -83,7 +83,27 @@ namespace Simulator
             return (Int32)a < (Int32)b;
         }
 
-        public static UInt32 ReverseEndian(UInt32 w)
+        public static UInt32 RightShift(this UInt32 value, Byte n)
+        {
+            return value >> n;
+        }
+
+        public static UInt16 RightShift(this UInt16 value, Byte n)
+        {
+            return (UInt16)(value >> n);
+        }
+
+        public static Byte RightShift(this Byte value, Byte n)
+        {
+            return (Byte)(value >> n);
+        }
+
+        public static UInt32 LeftShift(this UInt32 value, Byte n)
+        {
+            return value << n;
+        }
+
+        public static UInt32 ReverseEndian(this UInt32 w)
         {
             Byte b1 = (Byte)w.Bits(7, 0);
             Byte b2 = (Byte)w.Bits(15, 8);
@@ -92,7 +112,7 @@ namespace Simulator
             return (UInt32)(b1 << 24 | b2 << 16 | b3 << 8 | b4);
         }
 
-        public static UInt16 ReverseEndian(UInt16 h)
+        public static UInt16 ReverseEndian(this UInt16 h)
         {
             Byte b1 = (Byte)h.Bits(7, 0);
             Byte b2 = (Byte)h.Bits(15, 8);

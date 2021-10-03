@@ -94,7 +94,7 @@ namespace Simulator
         [InlineData(Instruction.SLTI, 1000, 1001, 1)]
         [InlineData(Instruction.SLTI, -1, 999, 1)]
         [InlineData(Instruction.SLTI, 999, -1, 0)]
-        public void Execute_I_Format_X5_X6_arithmetic(Instruction instruction, Int32 x6, Int32 immediate12bits, Int32 x5_expected_value)
+        public void Execute_I_Format_X5_X6_arithmetic(Instruction instruction, Int32 x6, Int32 immediate12, Int32 x5_expected_value)
         {
             UInt32 pc = 0x1000;
             RegisterSet registers = new RegisterSet();
@@ -105,7 +105,7 @@ namespace Simulator
                 Instruction = instruction,
                 RD = 5,
                 RS1 = 6,
-                I_Immediate = (UInt32)immediate12bits
+                I_Immediate = (UInt32)immediate12
             };
 
             Executer.Execute(info, registers, null, ref pc);
@@ -131,7 +131,7 @@ namespace Simulator
         [InlineData(Instruction.SLTIU, 1000, 1001, 1)]
         [InlineData(Instruction.SLTIU, 0xFFFFFFFF, 999, 0)]
         [InlineData(Instruction.SLTIU, 999, 0xFFF, 1)]
-        public void Execute_I_Format_X5_X6_logical(Instruction instruction, UInt32 x6, UInt16 immediate12bits, UInt32 x5_expected_value)
+        public void Execute_I_Format_X5_X6_logical(Instruction instruction, UInt32 x6, UInt16 immediate, UInt32 x5_expected_value)
         {
             UInt32 pc = 0x1000;
             RegisterSet registers = new RegisterSet();
@@ -142,7 +142,7 @@ namespace Simulator
                 Instruction = instruction,
                 RD = 5,
                 RS1 = 6,
-                I_Immediate = immediate12bits.SignExtend(11)
+                I_Immediate = immediate.SignExtend(11)
             };
 
             Executer.Execute(info, registers, null, ref pc);
@@ -159,9 +159,9 @@ namespace Simulator
         [InlineData(Instruction.LB, 44, 20, "@0040 F4 56 34 12", 0xFFFFFFF4)] // sign extend!
         [InlineData(Instruction.LHU, 44, 20, "@0040 78 56 34 12", 0x00005678)]
         [InlineData(Instruction.LHU, 44, 22, "@0040 78 56 34 12", 0x00001234)]
-        [InlineData(Instruction.LH, 44, 20, "@0040 78 56 34 12", 0x00005678)] // Plus sign extend!
-        [InlineData(Instruction.LH, 44, 20, "@0040 78 96 34 12", 0xFFFF9678)] // Plus sign extend!
-        public void Execute_Load(Instruction instruction, UInt32 x6, Int32 immediate12bits, string memoryInit, UInt32 x5_expected_value)
+        [InlineData(Instruction.LH, 44, 20, "@0040 78 56 34 12", 0x00005678)]
+        [InlineData(Instruction.LH, 44, 20, "@0040 78 96 34 12", 0xFFFF9678)] // sign extend!
+        public void Execute_Load(Instruction instruction, UInt32 x6, Int32 immediate, string memoryInit, UInt32 x5_expected_value)
         {
             UInt32 pc = 0x1000;
             RegisterSet registers = new RegisterSet();
@@ -174,7 +174,7 @@ namespace Simulator
                 Instruction = instruction,
                 RD = 5,
                 RS1 = 6,
-                I_Immediate = (UInt32)immediate12bits
+                I_Immediate = (UInt32)immediate
             };
 
             Executer.Execute(info, registers, memory, ref pc);
@@ -182,5 +182,41 @@ namespace Simulator
             Assert.Equal(x5_expected_value.ToString("X8"), registers.X5.ToString("X8"));
             Assert.Equal((UInt32)0x1004, pc);
         }
+
+        [Theory]
+        [InlineData(Instruction.SW, 0x12345678, 44, 20, "@0040 AB CD EF 99", "@0040 78 56 34 12")]
+        [InlineData(Instruction.SB, 0x12345678, 44, 20, "@0040 AB CD EF 99", "@0040 78 CD EF 99")]
+        [InlineData(Instruction.SB, 0x12345678, 44, 21, "@0040 AB CD EF 99", "@0040 AB 78 EF 99")]
+        [InlineData(Instruction.SB, 0x12345678, 44, 22, "@0040 AB CD EF 99", "@0040 AB CD 78 99")]
+        [InlineData(Instruction.SB, 0x12345678, 44, 23, "@0040 AB CD EF 99", "@0040 AB CD EF 78")]
+        [InlineData(Instruction.SH, 0x12345678, 44, 20, "@0040 AB CD EF 99", "@0040 78 56 EF 99")]
+        [InlineData(Instruction.SH, 0x12345678, 44, 22, "@0040 AB CD EF 99", "@0040 AB CD 78 56")]
+        public void Execute_Store(Instruction instruction, UInt32 x5, UInt32 x6, Int32 immediate, string memoryInit, string memoryExpected)
+        {
+            UInt32 pc = 0x1000;
+            RegisterSet registers = new RegisterSet();
+            registers.X5 = x5;
+            registers.X6 = x6;
+
+            WordMemory memory = new WordMemory(memoryInit);
+
+            DecodeInfo info = new DecodeInfo
+            {
+                Instruction = instruction,
+                RD = 5,
+                RS1 = 6,
+                I_Immediate = (UInt32)immediate
+            };
+
+            Executer.Execute(info, registers, memory, ref pc);
+
+            Assert.Equal(memoryExpected, memory.Dump(0x0040, 4));
+            Assert.Equal((UInt32)0x1004, pc);
+        }
+
+        // --------------------------------------------------------------------
+        // TO DO: exceptions when try to read / write misaligned w/h/b address!
+        // --------------------------------------------------------------------
+        
     }
 }

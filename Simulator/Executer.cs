@@ -7,6 +7,9 @@ namespace Simulator
         public static void Execute(DecodeInfo info, RegisterSet registers, WordMemory memory, ref UInt32 pc)
         {
             UInt32 nextPC = pc + 4;
+            UInt32 rd_value = registers[info.RD];
+            Byte rd_byte_value = (Byte)rd_value.Bits(7, 0);
+            UInt16 rd_half_value = (UInt16)rd_value.Bits(15, 0);
             UInt32 rs1_value = registers[info.RS1];
             UInt32 rs2_value = registers[info.RS2];
             Byte reg_shift = (Byte)(rs2_value & 0x1F);
@@ -78,32 +81,37 @@ namespace Simulator
                     registers[info.RD] = Logic.SignedLessThan(rs1_value, info.I_Immediate) ? 1u : 0;
                     break;
                 case Instruction.LW:
-                {
-                    registers[info.RD] = Logic.ReverseEndian(mem_content);
+                    registers[info.RD] = mem_content.ReverseEndian();
                     break;
-                }
                 case Instruction.LBU:
-                {
                     registers[info.RD] = mem_byte_content;
                     break;
-                }
                 case Instruction.LB:
-                {
                     registers[info.RD] = mem_byte_content.SignExtend(7);
                     break;
-                }
                 case Instruction.LHU:
-                {
-                    registers[info.RD] = Logic.ReverseEndian(mem_half_content);
+                    registers[info.RD] = mem_half_content.ReverseEndian();
                     break;
-                }
                 case Instruction.LH:
-                {
-                    registers[info.RD] = Logic.ReverseEndian(mem_half_content).SignExtend(15);
+                    registers[info.RD] = mem_half_content.ReverseEndian().SignExtend(15);
                     break;
-                }
+                case Instruction.SW:
+                    memory[address >> 2] = rd_value.ReverseEndian();
+                    break;
+                case Instruction.SB:
+                    {
+                        UInt32 mask = ~(0xFF000000 >> (24 - byte_shift));
+                        memory[address >> 2] = (mem_content & mask) | (UInt32)(rd_byte_value << byte_shift);
+                        break;
+                    }
+                case Instruction.SH:
+                    {
+                        UInt32 mask = ~(0xFFFF0000 >> (16 - half_shift));
+                        memory[address >> 2] = (mem_content & mask) | (UInt32)(rd_half_value.ReverseEndian() << (half_shift));
+                        break;
+                    }
                 default:
-                    throw new Exception("Unknown instruction");
+                    throw new Exception($"Unknown instruction: {info.Instruction}");
            }
            pc = nextPC;
         }
