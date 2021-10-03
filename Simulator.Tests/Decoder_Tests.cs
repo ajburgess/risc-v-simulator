@@ -47,7 +47,7 @@ namespace Simulator.Tests
         [InlineData(0b_000000110010_00000_000_00000_0000000, 50)]
         [InlineData(0b_111111111111_00000_000_00000_0000000, -1)]
         [InlineData(0b_111111001110_00000_000_00000_0000000, -50)]
-        public void Decode_I_Format_Extracts_Immediate_WithSignExtension(UInt32 instruction, Int32 immediate)
+        public void Decode_Extracts_I_Format_Immediate_WithSignExtension(UInt32 instruction, Int32 immediate)
         {
             DecodeInfo info = Decoder.Decode(instruction);
             Assert.Equal(immediate, (Int32)info.I_Immediate);
@@ -56,7 +56,7 @@ namespace Simulator.Tests
         [Theory]
         [InlineData(0b_1111111_00000_11111_111_11111_1111111, 0x00)]
         [InlineData(0b_0000000_11111_00000_000_00000_0000000, 0x1F)]
-        public void Decode_R_Format_Extracts_SR2(UInt32 instruction, UInt16 sr2)
+        public void Decode_Extracts_SR2(UInt32 instruction, UInt16 sr2)
         {
             DecodeInfo info = Decoder.Decode(instruction);
             Assert.Equal(sr2, info.RS2);
@@ -65,7 +65,7 @@ namespace Simulator.Tests
         [Theory]
         [InlineData(0b_0000000_11111_11111_111_11111_1111111, 0x00)]
         [InlineData(0b_1111111_00000_00000_000_00000_0000000, 0x7F)]
-        public void Decode_R_Format_Extracts_Funct7(UInt32 instruction, UInt16 funct7)
+        public void Decode_Extracts_Funct7(UInt32 instruction, UInt16 funct7)
         {
             DecodeInfo info = Decoder.Decode(instruction);
             Assert.Equal(funct7, info.Funct7);
@@ -77,7 +77,7 @@ namespace Simulator.Tests
         [InlineData(0b_0000001_11111_11111_111_10010_1111111, 50)]
         [InlineData(0b_1111111_11111_11111_111_11111_1111111, -1)]
         [InlineData(0b_1111110_11111_11111_111_01110_1111111, -50)]
-        public void Decode_S_Format_Extracts_Immediate_WithSignExtension(UInt32 instruction, Int32 immediate)
+        public void Decode_Extracts_S_Format_Immediate_WithSignExtension(UInt32 instruction, Int32 immediate)
         {
             DecodeInfo info = Decoder.Decode(instruction);
             info.Format = Format.S;
@@ -94,7 +94,7 @@ namespace Simulator.Tests
         [InlineData(0b_0____000000_11111_11111_111_0000__1____1111111, 0b_0_1000_0000_0000)]
         [InlineData(0b_0____111111_11111_11111_111_0000__0____1111111, 0b_0_0111_1110_0000)]
         [InlineData(0b_0____000000_11111_11111_111_1111__0____1111111, 0b_0_0000_0001_1110)]
-        public void Decode_B_Format_Extracts_Immediate_WithSignExtension(UInt32 instruction, Int32 immediate)
+        public void Decode_Extracts_B_Format_Immediate_WithSignExtension(UInt32 instruction, Int32 immediate)
         {
             DecodeInfo info = Decoder.Decode(instruction);
             Assert.Equal(immediate, (Int32)info.B_Immediate);
@@ -106,7 +106,7 @@ namespace Simulator.Tests
         [InlineData(0b_00000000000000000010_11111_1111111, 0x2000)]
         [InlineData(0b_11111111111111111111_00000_0000000, 0xFFFFF000)]
         [InlineData(0b_01111111111111111111_00000_0000000, 0x7FFFF000)]
-        public void Decode_U_Format_Extracts_Immediate_NoSignExtension(UInt32 instruction, UInt32 immediate)
+        public void Decode_Extracts_U_Format_Immediate_NoSignExtension(UInt32 instruction, UInt32 immediate)
         {
             DecodeInfo info = Decoder.Decode(instruction);
             Assert.Equal(immediate, info.U_Immediate);
@@ -116,7 +116,7 @@ namespace Simulator.Tests
         //             20 10:1       11 19:12    
         [InlineData(0b_0__0000000000_0__00000000_11111_1111111, 0)]
         [InlineData(0b_0__0000000001_0__00000000_11111_1111111, 2)]
-        public void Decode_J_Format_Extracts_Immediate(UInt32 instruction, Int32 immediate)
+        public void Decode_Extracts_J_Format_Immediate_WithSignExtension(UInt32 instruction, Int32 immediate)
         {
             DecodeInfo info = Decoder.Decode(instruction);
             Assert.Equal(immediate, (Int32)info.J_Immediate);
