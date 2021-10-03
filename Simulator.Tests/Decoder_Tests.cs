@@ -219,7 +219,7 @@ namespace Simulator.Tests
         [Theory]
         [InlineData(Instruction.BEQ, 5, 6, 8, @"^beq\s+x5,\s?x6,\s?16$")]
         [InlineData(Instruction.BEQ, 5, 6, -8, @"^beq\s+x5,\s?x6,\s?-16$")]
-        public void DecodeInfo_B_Format_ToString_No_PC(Instruction instruction, Byte rd, Byte rs1, Int32 immediate, string expected)
+        public void DecodeInfo_B_Format_ToString(Instruction instruction, Byte rd, Byte rs1, Int32 immediate, string expected)
         {
             DecodeInfo info = new DecodeInfo
             {
@@ -230,23 +230,6 @@ namespace Simulator.Tests
                 B_Immediate = (UInt32)immediate
             };
             string text = info.ToString();
-            Assert.Matches(expected, text);
-        }
-
-        [Theory]
-        [InlineData(Instruction.BEQ, 5, 6, 8, 0x80001000, @"^beq\s+x5,\s?x6,\s?16\s+#\s+0x80001010$")]
-        [InlineData(Instruction.BEQ, 5, 6, -8, 0x80001000, @"^beq\s+x5,\s?x6,\s?-16\s+#\s+0x80000FF0$")]
-        public void DecodeInfo_B_Format_ToString_With_PC(Instruction instruction, Byte rd, Byte rs1, Int32 immediate, UInt32 pc, string expected)
-        {
-            DecodeInfo info = new DecodeInfo
-            {
-                Format = Format.B,
-                Instruction = instruction,
-                RD = rd,
-                RS1 = rs1,
-                B_Immediate = (UInt32)immediate
-            };
-            string text = info.ToString(pc);
             Assert.Matches(expected, text);
         }
 

@@ -66,22 +66,6 @@ namespace Simulator
         public Instruction Instruction { get; set; }
         public Format Format { get; set; }
 
-        public string ToString(UInt32 pc)
-        {
-            string text = this.ToString();
-            switch (Format)
-            {
-                case Format.B:
-                {
-                    UInt32 offset = ((UInt32)B_Immediate << 1);
-                    UInt32 destination_pc = pc + offset;
-                    text += $" # 0x{destination_pc:X8}";
-                    break;
-                }
-            }
-            return text;
-        }
-
         public override string ToString()
         {
             string instruction = Instruction.ToString().ToLower();
