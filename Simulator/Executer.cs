@@ -128,6 +128,9 @@ namespace Simulator
                 case Instruction.BGEU:
                     willBranch = !Logic.UnsignedLessThan(rs1_value, rs2_value);
                     break;
+                case Instruction.LUI:
+                    registers[info.RD] = info.U_Immediate << 12;
+                    break;
                 default:
                     throw new Exception($"Unknown instruction: {info.Instruction}");
            }

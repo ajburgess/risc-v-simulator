@@ -101,11 +101,11 @@ namespace Simulator.Tests
         }
 
         [Theory]
-        [InlineData(0b_00000000000000000000_11111_1111111, 0x0000)]
-        [InlineData(0b_00000000000000000001_00000_0000000, 0x1000)]
-        [InlineData(0b_00000000000000000010_11111_1111111, 0x2000)]
-        [InlineData(0b_11111111111111111111_00000_0000000, 0xFFFFF000)]
-        [InlineData(0b_01111111111111111111_00000_0000000, 0x7FFFF000)]
+        [InlineData(0b_00000000000000000000_11111_1111111, 0x00000000)]
+        [InlineData(0b_00000000000000000001_00000_0000000, 0x00000001)]
+        [InlineData(0b_00000000000000000010_11111_1111111, 0x00000002)]
+        [InlineData(0b_11111111111111111111_00000_0000000, 0x000FFFFF)]
+        [InlineData(0b_01111111111111111111_00000_0000000, 0x0007FFFF)]
         public void Decode_Extracts_U_Format_Immediate_NoSignExtension(UInt32 instruction, UInt32 immediate)
         {
             DecodeInfo info = Decoder.Decode(instruction);
@@ -234,7 +234,7 @@ namespace Simulator.Tests
         }
 
         [Theory]
-        [InlineData(Instruction.LUI, 5, 0x12345000, @"^lui\s+x5,\s?0x12345\s+#\s+0x12345000$")]
+        [InlineData(Instruction.LUI, 5, 0x12345, @"^lui\s+x5,\s?0x12345\s+#\s+0x12345000$")]
         public void DecodeInfo_U_Format_ToString(Instruction instruction, Byte rd, UInt32 immediate, string expected)
         {
             DecodeInfo info = new DecodeInfo

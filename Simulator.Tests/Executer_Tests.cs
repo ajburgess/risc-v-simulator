@@ -255,6 +255,27 @@ namespace Simulator
             Assert.Equal(expectedPC, pc);
         }
 
+        [Theory]
+        [InlineData(Instruction.LUI, 0x12345, 0xABCDEF99, 0x12345000)]
+        public void Execute_Upper_Immediate(Instruction instruction, UInt32 immediate, UInt32 x5, UInt32 expected_x5)
+        {
+            UInt32 pc = 0x1000;
+            RegisterSet registers = new RegisterSet();
+            registers.X5 = x5;
+
+            DecodeInfo info = new DecodeInfo
+            {
+                Instruction = instruction,
+                RD = 5,
+                U_Immediate = (UInt32)immediate
+            };
+
+            Executer.Execute(info, registers, null, ref pc);
+
+            Assert.Equal(expected_x5.ToString("X8"), registers.X5.ToString("X8"));
+            Assert.Equal((UInt32)0x1004, pc);
+        }
+
         // --------------------------------------------------------------------
         // TO DO: exceptions when try to read / write misaligned w/h/b address!
         // --------------------------------------------------------------------

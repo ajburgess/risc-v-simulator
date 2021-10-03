@@ -81,7 +81,7 @@ namespace Simulator
                 case Format.B:
                     return $"{instruction} x{RD},x{RS1},{(Int32)B_Immediate * 2}";
                 case Format.U:
-                    return $"{instruction} x{RD},0x{(U_Immediate >> 12):X5} # 0x{U_Immediate:X8}";
+                    return $"{instruction} x{RD},0x{U_Immediate:X5} # 0x{(U_Immediate << 12):X8}";
                 case Format.J:
                     return $"{instruction} x{RD},{(Int32)J_Immediate * 2}";
                 default:
@@ -231,7 +231,7 @@ namespace Simulator
                 I_Immediate = bits_31_downto_20.SignExtend(11),
                 S_Immediate = (bits_31_downto_25 << 5 | bits_11_downto_7).SignExtend(11),
                 B_Immediate = (bit_31 << 12 | bit_7 << 11 | bits_30_downto_25 << 5 | bits_11_downto_8 << 1).SignExtend(12),
-                U_Immediate = bits_31_downto_12 << 12,
+                U_Immediate = bits_31_downto_12,
                 J_Immediate = (bit_31 << 20 | bits_19_downto_12 << 12 | bit_20 << 11 | bits_30_downto_21 << 1).SignExtend(19),
                 Instruction = type,
                 Format = format
