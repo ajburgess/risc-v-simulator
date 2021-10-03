@@ -6,7 +6,6 @@ namespace Simulator
     {
         public static void Execute(DecodeInfo info, RegisterSet registers, WordMemory memory, ref UInt32 pc)
         {
-            UInt32 nextPC = pc + 4;
             UInt32 rd_value = registers[info.RD];
             Byte rd_byte_value = (Byte)rd_value.Bits(7, 0);
             UInt16 rd_half_value = (UInt16)rd_value.Bits(15, 0);
@@ -20,6 +19,7 @@ namespace Simulator
             Byte half_shift = (Byte)((2 - (address & 0x02)) << 3);
             Byte mem_byte_content = (Byte)(mem_content >> byte_shift & 0xFF);
             UInt16 mem_half_content = (UInt16)(mem_content >> half_shift & 0xFFFF);
+            bool willBranch = false;
 
             switch (info.Instruction)
             {
@@ -110,10 +110,28 @@ namespace Simulator
                         memory[address >> 2] = (mem_content & mask) | (UInt32)(rd_half_value.ReverseEndian() << (half_shift));
                         break;
                     }
+                case Instruction.BEQ:
+                    willBranch = rs1_value == rs2_value;
+                    break;
+                case Instruction.BNE:
+                    willBranch = rs1_value != rs2_value;
+                    break;
+                case Instruction.BLT:
+                    willBranch = Logic.SignedLessThan(rs1_value, rs2_value);
+                    break;
+                case Instruction.BGE:
+                    willBranch = !Logic.SignedLessThan(rs1_value, rs2_value);
+                    break;
+                case Instruction.BLTU:
+                    willBranch = Logic.UnsignedLessThan(rs1_value, rs2_value);
+                    break;
+                case Instruction.BGEU:
+                    willBranch = !Logic.UnsignedLessThan(rs1_value, rs2_value);
+                    break;
                 default:
                     throw new Exception($"Unknown instruction: {info.Instruction}");
            }
-           pc = nextPC;
+           pc = willBranch ? pc + (info.B_Immediate << 1) : pc + 4;
         }
     }
 }

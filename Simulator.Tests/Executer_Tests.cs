@@ -214,9 +214,50 @@ namespace Simulator
             Assert.Equal((UInt32)0x1004, pc);
         }
 
+        [Theory]
+        [InlineData(Instruction.BEQ, 123, 456, 20, 1000, 1004)]
+        [InlineData(Instruction.BEQ, 123, 123, 20, 1000, 1040)]
+        [InlineData(Instruction.BNE, 123, 456, 20, 1000, 1040)]
+        [InlineData(Instruction.BNE, 123, 123, 20, 1000, 1004)]
+        [InlineData(Instruction.BLT, 123, 122, 20, 1000, 1004)]
+        [InlineData(Instruction.BLT, 123, 123, 20, 1000, 1004)]
+        [InlineData(Instruction.BLT, 123, 124, 20, 1000, 1040)]
+        [InlineData(Instruction.BLT, 0x88888888, 124, 20, 1000, 1040)] // signed compare
+        [InlineData(Instruction.BGE, 123, 122, 20, 1000, 1040)]
+        [InlineData(Instruction.BGE, 123, 123, 20, 1000, 1040)]
+        [InlineData(Instruction.BGE, 123, 124, 20, 1000, 1004)]
+        [InlineData(Instruction.BGE, 0x88888888, 124, 20, 1000, 1004)] // signed compare
+        [InlineData(Instruction.BLTU, 123, 122, 20, 1000, 1004)]
+        [InlineData(Instruction.BLTU, 123, 123, 20, 1000, 1004)]
+        [InlineData(Instruction.BLTU, 123, 124, 20, 1000, 1040)]
+        [InlineData(Instruction.BLTU, 0x88888888, 124, 20, 1000, 1004)] // unsigned compare
+        [InlineData(Instruction.BGEU, 123, 122, 20, 1000, 1040)]
+        [InlineData(Instruction.BGEU, 123, 123, 20, 1000, 1040)]
+        [InlineData(Instruction.BGEU, 123, 124, 20, 1000, 1004)]
+        [InlineData(Instruction.BGEU, 0x88888888, 124, 20, 1000, 1040)] // unsigned compare
+        public void Execute_Branch(Instruction instruction, UInt32 x5, UInt32 x6, Int32 immediate, UInt32 previousPC, UInt32 expectedPC)
+        {
+            UInt32 pc = previousPC;
+            RegisterSet registers = new RegisterSet();
+            registers.X5 = x5;
+            registers.X6 = x6;
+
+            DecodeInfo info = new DecodeInfo
+            {
+                Instruction = instruction,
+                RS1 = 5,
+                RS2 = 6,
+                B_Immediate = (UInt32)immediate
+            };
+
+            Executer.Execute(info, registers, null, ref pc);
+
+            Assert.Equal(expectedPC, pc);
+        }
+
         // --------------------------------------------------------------------
         // TO DO: exceptions when try to read / write misaligned w/h/b address!
         // --------------------------------------------------------------------
-        
+
     }
 }
