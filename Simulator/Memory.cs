@@ -18,8 +18,8 @@ namespace Simulator
         {
             Dictionary<UInt32, Byte> cells = new System.Collections.Generic.Dictionary<uint, byte>();
             UInt32 address = 0x0000;
-            string[] parts = memoryInit.Split(" ");
-            foreach (string part in parts)
+            string[] parts = memoryInit.Replace("\r\n", " ").Split(" ");
+            foreach (string part in parts.Where(p => !string.IsNullOrEmpty(p)))
             {
                 if (part.StartsWith("@"))
                 {

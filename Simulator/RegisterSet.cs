@@ -26,6 +26,14 @@ namespace Simulator
     {
         private UInt32[] registers = new UInt32[16];
 
+        public void Dump()
+        {
+            for (int i = 0; i < 16; i++)
+            {
+                System.Console.WriteLine($"X{i:D2} 0x{registers[i]:X8}");
+            }
+        }
+
         public UInt32 X0
         {
             get { return this[R.X0]; }
@@ -150,7 +158,10 @@ namespace Simulator
         {
             get
             {
-                return (r == 0) ? 0x00000000 : registers[r];
+                if (r < 0 || r >= registers.Length)
+                    return 0x00000000;
+                else
+                    return (r == 0) ? 0x00000000 : registers[r];
             }
             set
             {
