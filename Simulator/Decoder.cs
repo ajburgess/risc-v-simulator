@@ -77,13 +77,13 @@ namespace Simulator
                 case Format.I:
                     return $"{instruction} x{RD},x{RS1},{(Int32)I_Immediate}";
                 case Format.S:
-                    return $"{instruction} x{RD},({(Int32)S_Immediate})x{RS1}";
+                    return $"{instruction} x{RS2},({(Int32)S_Immediate})x{RS1}";
                 case Format.B:
-                    return $"{instruction} x{RD},x{RS1},{(Int32)B_Immediate * 2}";
+                    return $"{instruction} x{RD},x{RS1},{(Int32)B_Immediate}";
                 case Format.U:
                     return $"{instruction} x{RD},0x{U_Immediate:X5} # 0x{(U_Immediate << 12):X8}";
                 case Format.J:
-                    return $"{instruction} x{RD},{(Int32)J_Immediate * 2}";
+                    return $"{instruction} x{RD},{(Int32)J_Immediate}";
                 default:
                     return "";
             }
@@ -163,10 +163,10 @@ namespace Simulator
                     switch (funct3)
                     {
                         case 0b_000: type = Instruction.LB; break;
-                        case 0b_010: type = Instruction.LH; break;
-                        case 0b_011: type = Instruction.LW; break;
+                        case 0b_001: type = Instruction.LH; break;
+                        case 0b_010: type = Instruction.LW; break;
                         case 0b_100: type = Instruction.LBU; break;
-                        case 0b_110: type = Instruction.LHU; break;
+                        case 0b_101: type = Instruction.LHU; break;
                     }
                     break;
                 case 0b_0100011:
@@ -192,31 +192,19 @@ namespace Simulator
                     break;
                 case 0b_0110111:
                     format = Format.U;
-                    switch (funct3)
-                    {
-                        case 0b_000: type = Instruction.LUI; break;
-                    }
+                    type = Instruction.LUI;
                     break;
                 case 0b_0010111:
                     format = Format.U;
-                    switch (funct3)
-                    {
-                        case 0b_000: type = Instruction.AUIPC; break;
-                    }
+                    type = Instruction.AUIPC;
                     break;
                 case 0b_1100111:
                     format = Format.I;
-                    switch (funct3)
-                    {
-                        case 0b_000: type = Instruction.JALR; break;
-                    }
+                    type = Instruction.JALR;
                     break;
                 case 0b_1101111:
                     format = Format.J;
-                    switch (funct3)
-                    {
-                        case 0b_000: type = Instruction.JAL; break;
-                    }
+                    type = Instruction.JAL;
                     break;
             }
 
@@ -230,7 +218,7 @@ namespace Simulator
                 RS2 = (Byte)(bits_24_downto_20),
                 I_Immediate = bits_31_downto_20.SignExtend(11),
                 S_Immediate = (bits_31_downto_25 << 5 | bits_11_downto_7).SignExtend(11),
-                B_Immediate = (bit_31 << 12 | bit_7 << 11 | bits_30_downto_25 << 5 | bits_11_downto_8 << 1).SignExtend(12),
+                B_Immediate = ((bit_31 << 12) | (bit_7 << 11) | (bits_30_downto_25) << 5 | (bits_11_downto_8) << 1).SignExtend(12),
                 U_Immediate = bits_31_downto_12,
                 J_Immediate = (bit_31 << 20 | bits_19_downto_12 << 12 | bit_20 << 11 | bits_30_downto_21 << 1).SignExtend(19),
                 Instruction = type,

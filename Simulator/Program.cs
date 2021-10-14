@@ -1,5 +1,6 @@
 ﻿using System;
 using System.IO;
+using Utilities;
 
 namespace Simulator
 {
@@ -7,26 +8,22 @@ namespace Simulator
     {
         static void Main(string[] args)
         {
-            string hexPath = "../Samples/add.hex";
-            string hex = File.ReadAllText(hexPath);
-            WordMemory memory = new WordMemory(hex);
-            RegisterSet registers = new RegisterSet();
-            UInt32 pc = 0x00000000;
-
-            registers.Dump();
-            System.Console.WriteLine();
-
-            while (pc < 0x00002000)
+            IWordMemory memory = new WordMemory(0x10000 >> 2);
+            memory.LoadFromFile("../Samples/bin/hello.hex");
+            VirtualMachine vm = new VirtualMachine(memory);
+            while (!vm.Halted)
             {
-                UInt32 instruction = memory[pc >> 2].ReverseEndian();
-                DecodeInfo decoded = Decoder.Decode(instruction);
-                System.Console.WriteLine(decoded);
+                vm.DisplayRegisters(NumberFormat.Hexadecimal);
+                Console.WriteLine();
+                vm.DisplayMemory(0x7000, 0x700F);
+                Console.WriteLine();
+                vm.DisplayCurrentInstuction();
                 System.Console.WriteLine();
-                Console.ReadLine();
-                Executer.Execute(decoded, registers, memory, ref pc);
-                registers.Dump();
+                // System.Console.Write("Press enter to step...");
+                // Console.ReadLine();
+                vm.Step();
                 System.Console.WriteLine();
-            }
+            }            
         }
     }
 }

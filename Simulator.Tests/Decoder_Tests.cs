@@ -143,10 +143,10 @@ namespace Simulator.Tests
         [InlineData(0b_0000000_00000_00000_101_00000_0010011, Instruction.SRLI, Format.I)]
         [InlineData(0b_0100000_00000_00000_101_00000_0010011, Instruction.SRAI, Format.I)]
         [InlineData(0b_0000000_00000_00000_000_00000_0000011, Instruction.LB, Format.I)]
-        [InlineData(0b_0000000_00000_00000_010_00000_0000011, Instruction.LH, Format.I)]
-        [InlineData(0b_0000000_00000_00000_011_00000_0000011, Instruction.LW, Format.I)]
+        [InlineData(0b_0000000_00000_00000_001_00000_0000011, Instruction.LH, Format.I)]
+        [InlineData(0b_0000000_00000_00000_010_00000_0000011, Instruction.LW, Format.I)]
         [InlineData(0b_0000000_00000_00000_100_00000_0000011, Instruction.LBU, Format.I)]
-        [InlineData(0b_0000000_00000_00000_110_00000_0000011, Instruction.LHU, Format.I)]
+        [InlineData(0b_0000000_00000_00000_101_00000_0000011, Instruction.LHU, Format.I)]
         [InlineData(0b_0000000_00000_00000_000_00000_0100011, Instruction.SB, Format.S)]
         [InlineData(0b_0000000_00000_00000_001_00000_0100011, Instruction.SH, Format.S)]
         [InlineData(0b_0000000_00000_00000_010_00000_0100011, Instruction.SW, Format.S)]
@@ -202,14 +202,14 @@ namespace Simulator.Tests
 
         [Theory]
         [InlineData(Instruction.SW, 5, 6, -50, @"^sw\s+x5,\s?\(-50\)x6$")]
-        public void DecodeInfo_S_Format_ToString(Instruction instruction, Byte rd, Byte rs1, Int32 immediate, string expected)
+        public void DecodeInfo_S_Format_ToString(Instruction instruction, Byte rs2, Byte rs1, Int32 immediate, string expected)
         {
             DecodeInfo info = new DecodeInfo
             {
                 Format = Format.S,
                 Instruction = instruction,
-                RD = rd,
                 RS1 = rs1,
+                RS2 = rs2,
                 S_Immediate = (UInt32)immediate
             };
             string text = info.ToString();
@@ -217,8 +217,8 @@ namespace Simulator.Tests
         }
 
         [Theory]
-        [InlineData(Instruction.BEQ, 5, 6, 8, @"^beq\s+x5,\s?x6,\s?16$")]
-        [InlineData(Instruction.BEQ, 5, 6, -8, @"^beq\s+x5,\s?x6,\s?-16$")]
+        [InlineData(Instruction.BEQ, 5, 6, 16, @"^beq\s+x5,\s?x6,\s?16$")]
+        [InlineData(Instruction.BEQ, 5, 6, -16, @"^beq\s+x5,\s?x6,\s?-16$")]
         public void DecodeInfo_B_Format_ToString(Instruction instruction, Byte rd, Byte rs1, Int32 immediate, string expected)
         {
             DecodeInfo info = new DecodeInfo
@@ -249,7 +249,7 @@ namespace Simulator.Tests
         }
 
         [Theory]
-        [InlineData(Instruction.JAL, 5, 8, @"^jal\s+x5,\s?16$")]
+        [InlineData(Instruction.JAL, 5, 16, @"^jal\s+x5,\s?16$")]
         public void DecodeInfo_J_Format_ToString_No_PC(Instruction instruction, Byte rd, Int32 immediate, string expected)
         {
             DecodeInfo info = new DecodeInfo

@@ -1,4 +1,6 @@
 using System;
+using System.Collections.Generic;
+using System.Linq;
 
 namespace Simulator
 {
@@ -25,6 +27,11 @@ namespace Simulator
     public class RegisterSet
     {
         private UInt32[] registers = new UInt32[16];
+
+        public UInt32[] AsReadOnly()
+        {
+            return this.registers.ToArray();
+        }
 
         public void Dump()
         {

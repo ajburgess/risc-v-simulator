@@ -4,17 +4,17 @@ namespace Simulator
 {
     public static class Executer
     {
-        public static void Execute(DecodeInfo info, RegisterSet registers, WordMemory memory, ref UInt32 pc)
+        public static void Execute(DecodeInfo info, RegisterSet registers, IWordMemory memory, ref UInt32 pc)
         {
             UInt32 rd_value = registers[info.RD];
-            Byte rd_byte_value = (Byte)rd_value.Bits(7, 0);
-            UInt16 rd_half_value = (UInt16)rd_value.Bits(15, 0);
             UInt32 rs1_value = registers[info.RS1];
             UInt32 rs2_value = registers[info.RS2];
+            Byte rs2_byte_value = (Byte)rs2_value.Bits(7, 0);
+            UInt16 rs2_half_value = (UInt16)rs2_value.Bits(15, 0);
             Byte reg_shift = (Byte)(rs2_value & 0x1F);
             Byte imm_shift = (Byte)(info.I_Immediate & 0x1F);
-            UInt32 address = rs1_value + info.I_Immediate;
-            UInt32 mem_content = memory != null ? memory[address >> 2] : 0x00000000;
+            UInt32 address = rs1_value + (info.Format == Format.S ? info.S_Immediate : info.I_Immediate);
+            UInt32 mem_content = memory != null ? memory.GetWord(address) : 0x00000000;
             Byte byte_shift = (Byte)((3 - (address & 0x03)) << 3);
             Byte half_shift = (Byte)((2 - (address & 0x02)) << 3);
             Byte mem_byte_content = (Byte)(mem_content >> byte_shift & 0xFF);
@@ -96,18 +96,18 @@ namespace Simulator
                     registers[info.RD] = mem_half_content.ReverseEndian().SignExtend(15);
                     break;
                 case Instruction.SW:
-                    memory[address >> 2] = rd_value.ReverseEndian();
+                    memory.SetWord(address, rs2_value.ReverseEndian());
                     break;
                 case Instruction.SB:
                     {
                         UInt32 mask = ~(0xFF000000 >> (24 - byte_shift));
-                        memory[address >> 2] = (mem_content & mask) | (UInt32)(rd_byte_value << byte_shift);
+                        memory.SetWord(address, (mem_content & mask) | (UInt32)(rs2_byte_value << byte_shift));
                         break;
                     }
                 case Instruction.SH:
                     {
                         UInt32 mask = ~(0xFFFF0000 >> (16 - half_shift));
-                        memory[address >> 2] = (mem_content & mask) | (UInt32)(rd_half_value.ReverseEndian() << (half_shift));
+                        memory.SetWord(address, (mem_content & mask) | (UInt32)(rs2_half_value.ReverseEndian() << (half_shift)));
                         break;
                     }
                 case Instruction.BEQ:
@@ -146,9 +146,9 @@ namespace Simulator
                     throw new Exception($"Unknown instruction: {info.Instruction}");
             }
             if (willBranch && info.Format == Format.B)
-                pc = pc + (info.B_Immediate << 1);
+                pc = pc + (info.B_Immediate);
             else if (willBranch && info.Format == Format.J)
-                pc = pc + (info.J_Immediate << 1);
+                pc = pc + (info.J_Immediate);
             else if (willBranch && info.Format == Format.I)
                 pc = rs1_value + info.I_Immediate;
             else

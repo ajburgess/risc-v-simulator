@@ -1,5 +1,8 @@
 using System;
+using System.Diagnostics;
+using System.IO;
 using Xunit;
+using System.Linq;
 
 namespace Simulator
 {
@@ -24,23 +27,21 @@ namespace Simulator
         [InlineData(Instruction.SLT, 999, -1, 0)]
         public void Execute_R_Format_X5_X6_X7_arithmetic(Instruction instruction, Int32 x6, Int32 x7, Int32 x5_expected_value)
         {
-            UInt32 pc = 0x1000;
-            RegisterSet registers = new RegisterSet();
-            registers.X6 = (UInt32)x6;
-            registers.X7 = (UInt32)x7;
-
-            DecodeInfo info = new DecodeInfo
+            IWordMemory memory= new SparseWordMemory();
+            using (AssemblerV2 assembler = AssemblerV2.Create(0x1000))
             {
-                Instruction = instruction,
-                RD = 5,
-                RS1 = 6,
-                RS2 = 7
-            };
+                assembler.Assemble($"{instruction} x5,x6,x7");
+                memory.Load(assembler.ToHex());
+            }
 
-            Executer.Execute(info, registers, null, ref pc);
+            VirtualMachine vm = new VirtualMachine(memory, pc: 0x1000);
+            vm.Registers.X6 = (UInt32)x6;
+            vm.Registers.X7 = (UInt32)x7;
 
-            Assert.Equal(x5_expected_value, (Int32)registers.X5);
-            Assert.Equal((UInt32)0x1004, pc);
+            vm.Step();
+
+            Assert.Equal(x5_expected_value, (Int32)vm.Registers.X5);
+            Assert.Equal((UInt32)0x1004, vm.PC);
         }
 
         [Theory]
@@ -63,23 +64,21 @@ namespace Simulator
         [InlineData(Instruction.SLTU, 999, 0xFFFFFFFF, 1)]
         public void Execute_R_Format_X5_X6_X7_logical(Instruction instruction, UInt32 x6, UInt32 x7, UInt32 x5_expected_value)
         {
-            UInt32 pc = 0x1000;
-            RegisterSet registers = new RegisterSet();
-            registers.X6 = x6;
-            registers.X7 = x7;
-
-            DecodeInfo info = new DecodeInfo
+            IWordMemory memory= new SparseWordMemory();
+            using (AssemblerV2 assembler = AssemblerV2.Create(0x1000))
             {
-                Instruction = instruction,
-                RD = 5,
-                RS1 = 6,
-                RS2 = 7
-            };
+                assembler.Assemble($"{instruction} x5,x6,x7");
+                memory.Load(assembler.ToHex());
+            }
 
-            Executer.Execute(info, registers, null, ref pc);
+            VirtualMachine vm = new VirtualMachine(memory, pc: 0x1000);
+            vm.Registers.X6 = (UInt32)x6;
+            vm.Registers.X7 = (UInt32)x7;
 
-            Assert.Equal(x5_expected_value, registers.X5);
-            Assert.Equal((UInt32)0x1004, pc);
+            vm.Step();
+
+            Assert.Equal(x5_expected_value, vm.Registers.X5);
+            Assert.Equal((UInt32)0x1004, vm.PC);
         }
 
         [Theory]
@@ -94,33 +93,31 @@ namespace Simulator
         [InlineData(Instruction.SLTI, 1000, 1001, 1)]
         [InlineData(Instruction.SLTI, -1, 999, 1)]
         [InlineData(Instruction.SLTI, 999, -1, 0)]
-        public void Execute_I_Format_X5_X6_arithmetic(Instruction instruction, Int32 x6, Int32 immediate12, Int32 x5_expected_value)
+        public void Execute_I_Format_X5_X6_arithmetic(Instruction instruction, Int32 x6, Int32 immediate, Int32 x5_expected_value)
         {
-            UInt32 pc = 0x1000;
-            RegisterSet registers = new RegisterSet();
-            registers.X6 = (UInt32)x6;
-
-            DecodeInfo info = new DecodeInfo
+            IWordMemory memory= new SparseWordMemory();
+            using (AssemblerV2 assembler = AssemblerV2.Create(0x1000))
             {
-                Instruction = instruction,
-                RD = 5,
-                RS1 = 6,
-                I_Immediate = (UInt32)immediate12
-            };
+                assembler.Assemble($"{instruction} x5,x6,{immediate}");
+                memory.Load(assembler.ToHex());
+            }
 
-            Executer.Execute(info, registers, null, ref pc);
+            VirtualMachine vm = new VirtualMachine(memory, pc: 0x1000);
+            vm.Registers.X6 = (UInt32)x6;
 
-            Assert.Equal(x5_expected_value, (Int32)registers.X5);
-            Assert.Equal((UInt32)0x1004, pc);
+            vm.Step();
+
+            Assert.Equal(x5_expected_value, (Int32)vm.Registers.X5);
+            Assert.Equal((UInt32)0x1004, vm.PC);
         }
 
         [Theory]
         [InlineData(Instruction.ANDI, 0x12345678, 0x7FF, 0x00000678)]
-        [InlineData(Instruction.ANDI, 0x12345678, 0xFFF, 0x12345678)] // sign extend immediate!
+        [InlineData(Instruction.ANDI, 0x12345678, -1, 0x12345678)] // sign extend immediate!
         [InlineData(Instruction.ORI, 0x12345678, 0x7FF, 0x123457FF)]
-        [InlineData(Instruction.ORI, 0x12345678, 0xFFF, 0xFFFFFFFF)] // sign extend immediate!
+        [InlineData(Instruction.ORI, 0x12345678, -1, 0xFFFFFFFF)] // sign extend immediate!
         [InlineData(Instruction.XORI, 0x12345678, 0x7FF, 0x12345187)]
-        [InlineData(Instruction.XORI, 0x12345678, 0xFFF, 0xEDCBA987)] // sign extend immediate!
+        [InlineData(Instruction.XORI, 0x12345678, -1, 0xEDCBA987)] // sign extend immediate!
         [InlineData(Instruction.SLLI, 0x00000001, 0, 0x00000001)]
         [InlineData(Instruction.SLLI, 0x00000001, 1, 0x00000002)]
         [InlineData(Instruction.SLLI, 0x00000001, 31, 0x80000000)]
@@ -130,25 +127,23 @@ namespace Simulator
         [InlineData(Instruction.SLTIU, 1000, 1000, 0)]
         [InlineData(Instruction.SLTIU, 1000, 1001, 1)]
         [InlineData(Instruction.SLTIU, 0xFFFFFFFF, 999, 0)]
-        [InlineData(Instruction.SLTIU, 999, 0xFFF, 1)]
-        public void Execute_I_Format_X5_X6_logical(Instruction instruction, UInt32 x6, UInt16 immediate, UInt32 x5_expected_value)
+        [InlineData(Instruction.SLTIU, 999, -1, 1)]
+        public void Execute_I_Format_X5_X6_logical(Instruction instruction, UInt32 x6, Int32 immediate, UInt32 x5_expected_value)
         {
-            UInt32 pc = 0x1000;
-            RegisterSet registers = new RegisterSet();
-            registers.X6 = x6;
-
-            DecodeInfo info = new DecodeInfo
+            IWordMemory memory= new SparseWordMemory();
+            using (AssemblerV2 assembler = AssemblerV2.Create(0x1000))
             {
-                Instruction = instruction,
-                RD = 5,
-                RS1 = 6,
-                I_Immediate = immediate.SignExtend(11)
-            };
+                assembler.Assemble($"{instruction} x5,x6,{immediate}");
+                memory.Load(assembler.ToHex());
+            }
 
-            Executer.Execute(info, registers, null, ref pc);
+            VirtualMachine vm = new VirtualMachine(memory, pc: 0x1000);
+            vm.Registers.X6 = (UInt32)x6;
 
-            Assert.Equal(x5_expected_value, registers.X5);
-            Assert.Equal((UInt32)0x1004, pc);
+            vm.Step();
+
+            Assert.Equal(x5_expected_value, vm.Registers.X5);
+            Assert.Equal((UInt32)0x1004, vm.PC);
         }
 
         [Theory]
@@ -163,24 +158,21 @@ namespace Simulator
         [InlineData(Instruction.LH, 44, 20, "@0040 78 96 34 12", 0xFFFF9678)] // sign extend!
         public void Execute_Load(Instruction instruction, UInt32 x6, Int32 immediate, string memoryInit, UInt32 x5_expected_value)
         {
-            UInt32 pc = 0x1000;
-            RegisterSet registers = new RegisterSet();
-            registers.X6 = x6;
-
-            WordMemory memory = new WordMemory(memoryInit);
-
-            DecodeInfo info = new DecodeInfo
+            IWordMemory memory= new SparseWordMemory();
+            using (AssemblerV2 assembler = AssemblerV2.Create(0x1000))
             {
-                Instruction = instruction,
-                RD = 5,
-                RS1 = 6,
-                I_Immediate = (UInt32)immediate
-            };
+                assembler.Assemble($"{instruction} x5,{immediate}(x6)");
+                memory.Load(assembler.ToHex());
+                memory.Load(memoryInit);
+            }
 
-            Executer.Execute(info, registers, memory, ref pc);
+            VirtualMachine vm = new VirtualMachine(memory, pc: 0x1000);
+            vm.Registers.X6 = (UInt32)x6;
 
-            Assert.Equal(x5_expected_value.ToString("X8"), registers.X5.ToString("X8"));
-            Assert.Equal((UInt32)0x1004, pc);
+            vm.Step();
+
+            Assert.Equal(x5_expected_value.ToString("X8"), vm.Registers.X5.ToString("X8"));
+            Assert.Equal((UInt32)0x1004, vm.PC);
         }
 
         [Theory]
@@ -193,153 +185,148 @@ namespace Simulator
         [InlineData(Instruction.SH, 0x12345678, 44, 22, "@0040 AB CD EF 99", "@0040 AB CD 78 56")]
         public void Execute_Store(Instruction instruction, UInt32 x5, UInt32 x6, Int32 immediate, string memoryInit, string memoryExpected)
         {
-            UInt32 pc = 0x1000;
-            RegisterSet registers = new RegisterSet();
-            registers.X5 = x5;
-            registers.X6 = x6;
-
-            WordMemory memory = new WordMemory(memoryInit);
-
-            DecodeInfo info = new DecodeInfo
+            IWordMemory memory= new SparseWordMemory();
+            using (AssemblerV2 assembler = AssemblerV2.Create(0x1000))
             {
-                Instruction = instruction,
-                RD = 5,
-                RS1 = 6,
-                I_Immediate = (UInt32)immediate
-            };
+                assembler.Assemble($"{instruction} x5,{immediate}(x6)");
+                memory.Load(assembler.ToHex());
+                memory.Load(memoryInit);
+            }
 
-            Executer.Execute(info, registers, memory, ref pc);
+            VirtualMachine vm = new VirtualMachine(memory, pc: 0x1000);
+            vm.Registers.X5 = (UInt32)x5;
+            vm.Registers.X6 = (UInt32)x6;
 
-            Assert.Equal(memoryExpected, memory.Dump(0x0040, 4));
-            Assert.Equal((UInt32)0x1004, pc);
+            vm.Step();
+
+            Assert.Equal(memoryExpected, memory.ToString(0x0040, 4));
+            Assert.Equal((UInt32)0x1004, vm.PC);
         }
 
         [Theory]
-        [InlineData(Instruction.BEQ, 123, 456, 20, 1000, 1004)]
-        [InlineData(Instruction.BEQ, 123, 123, 20, 1000, 1040)]
-        [InlineData(Instruction.BNE, 123, 456, 20, 1000, 1040)]
-        [InlineData(Instruction.BNE, 123, 123, 20, 1000, 1004)]
-        [InlineData(Instruction.BLT, 123, 122, 20, 1000, 1004)]
-        [InlineData(Instruction.BLT, 123, 123, 20, 1000, 1004)]
-        [InlineData(Instruction.BLT, 123, 124, 20, 1000, 1040)]
-        [InlineData(Instruction.BLT, 0x88888888, 124, 20, 1000, 1040)] // signed compare
-        [InlineData(Instruction.BGE, 123, 122, 20, 1000, 1040)]
-        [InlineData(Instruction.BGE, 123, 123, 20, 1000, 1040)]
-        [InlineData(Instruction.BGE, 123, 124, 20, 1000, 1004)]
-        [InlineData(Instruction.BGE, 0x88888888, 124, 20, 1000, 1004)] // signed compare
-        [InlineData(Instruction.BLTU, 123, 122, 20, 1000, 1004)]
-        [InlineData(Instruction.BLTU, 123, 123, 20, 1000, 1004)]
-        [InlineData(Instruction.BLTU, 123, 124, 20, 1000, 1040)]
-        [InlineData(Instruction.BLTU, 0x88888888, 124, 20, 1000, 1004)] // unsigned compare
-        [InlineData(Instruction.BGEU, 123, 122, 20, 1000, 1040)]
-        [InlineData(Instruction.BGEU, 123, 123, 20, 1000, 1040)]
-        [InlineData(Instruction.BGEU, 123, 124, 20, 1000, 1004)]
-        [InlineData(Instruction.BGEU, 0x88888888, 124, 20, 1000, 1040)] // unsigned compare
-        public void Execute_Branch(Instruction instruction, UInt32 x5, UInt32 x6, Int32 immediate, UInt32 previousPC, UInt32 expectedPC)
+        [InlineData(Instruction.BEQ, 123, 123, 40, 1000, 1044)]
+        [InlineData(Instruction.BEQ, 123, 456, 40, 1000, 1004)]
+        [InlineData(Instruction.BNE, 123, 456, 40, 1000, 1044)]
+        [InlineData(Instruction.BNE, 123, 123, 40, 1000, 1004)]
+        [InlineData(Instruction.BLT, 123, 122, 40, 1000, 1004)]
+        [InlineData(Instruction.BLT, 123, 123, 40, 1000, 1004)]
+        [InlineData(Instruction.BLT, 123, 124, 40, 1000, 1044)]
+        [InlineData(Instruction.BLT, 0x88888888, 124, 40, 1000, 1044)] // signed compare
+        [InlineData(Instruction.BGE, 123, 122, 40, 1000, 1044)]
+        [InlineData(Instruction.BGE, 123, 123, 40, 1000, 1044)]
+        [InlineData(Instruction.BGE, 123, 124, 40, 1000, 1004)]
+        [InlineData(Instruction.BGE, 0x88888888, 124, 40, 1000, 1004)] // signed compare
+        [InlineData(Instruction.BLTU, 123, 122, 40, 1000, 1004)]
+        [InlineData(Instruction.BLTU, 123, 123, 40, 1000, 1004)]
+        [InlineData(Instruction.BLTU, 123, 124, 40, 1000, 1044)]
+        [InlineData(Instruction.BLTU, 0x88888888, 124, 40, 1000, 1004)] // unsigned compare
+        [InlineData(Instruction.BGEU, 123, 122, 40, 1000, 1044)]
+        [InlineData(Instruction.BGEU, 123, 123, 40, 1000, 1044)]
+        [InlineData(Instruction.BGEU, 123, 124, 40, 1000, 1004)]
+        [InlineData(Instruction.BGEU, 0x88888888, 124, 40, 1000, 1044)] // unsigned compare
+        public void Execute_Branch(Instruction instruction, UInt32 x5, UInt32 x6, UInt32 spaces, UInt32 initialPC, UInt32 expectedPC)
         {
-            UInt32 pc = previousPC;
-            RegisterSet registers = new RegisterSet();
-            registers.X5 = x5;
-            registers.X6 = x6;
-
-            DecodeInfo info = new DecodeInfo
+            IWordMemory memory= new SparseWordMemory();
+            using (AssemblerV2 assembler = AssemblerV2.Create(initialPC))
             {
-                Instruction = instruction,
-                Format = Format.B,
-                RS1 = 5,
-                RS2 = 6,
-                B_Immediate = (UInt32)immediate
-            };
+                assembler.Assemble(
+                    $"{instruction} x5,x6,dest",
+                    $".skip {spaces}, 0",
+                    $"dest:"
+                );
+                memory.Load(assembler.ToHex());
+            }
 
-            Executer.Execute(info, registers, null, ref pc);
+            VirtualMachine vm = new VirtualMachine(memory, pc: initialPC);
+            vm.Registers.X5 = (UInt32)x5;
+            vm.Registers.X6 = (UInt32)x6;
 
-            Assert.Equal(expectedPC, pc);
+            vm.Step();
+
+            Assert.Equal(expectedPC, vm.PC);
         }
 
         [Theory]
         [InlineData(Instruction.LUI, 0x12345, 0xABCDEF99, 0x12345000)]
         public void Execute_LUI(Instruction instruction, UInt32 immediate, UInt32 x5, UInt32 expected_x5)
         {
-            UInt32 pc = 0x1000;
-            RegisterSet registers = new RegisterSet();
-            registers.X5 = x5;
-
-            DecodeInfo info = new DecodeInfo
+            IWordMemory memory= new SparseWordMemory();
+            using (AssemblerV2 assembler = AssemblerV2.Create(0x1000))
             {
-                Instruction = instruction,
-                RD = 5,
-                U_Immediate = immediate
-            };
+                assembler.Assemble($"{instruction} x5,{immediate}");
+                memory.Load(assembler.ToHex());
+            }
 
-            Executer.Execute(info, registers, null, ref pc);
+            VirtualMachine vm = new VirtualMachine(memory, pc: 0x1000);
+            vm.Registers.X5 = (UInt32)x5;
 
-            Assert.Equal(expected_x5.ToString("X8"), registers.X5.ToString("X8"));
-            Assert.Equal((UInt32)0x1004, pc);
+            vm.Step();
+
+            Assert.Equal(expected_x5.ToString("X8"), vm.Registers.X5.ToString("X8"));
+            Assert.Equal((UInt32)0x1004, vm.PC);
         }
 
         [Theory]
-        [InlineData(Instruction.AUIPC, 0x12345, 0x81000AAA, 0xDEADBEEF, 0x93345AAA)]
+        [InlineData(Instruction.AUIPC, 0x12345, 0x81000AA8, 0xDEADBEEF, 0x93345AA8)]
         public void Execute_AUIPC(Instruction instruction, UInt32 immediate, UInt32 pc_before, UInt32 x5_before, UInt32 expected_x5)
         {
-            UInt32 pc = pc_before;
-            RegisterSet registers = new RegisterSet();
-            registers.X5 = x5_before;
-
-            DecodeInfo info = new DecodeInfo
+            IWordMemory memory= new SparseWordMemory();
+            using (AssemblerV2 assembler = AssemblerV2.Create(pc_before))
             {
-                Instruction = instruction,
-                RD = 5,
-                U_Immediate = immediate
-            };
+                assembler.Assemble($"{instruction} x5,{immediate}");
+                memory.Load(assembler.ToHex());
+            }
 
-            Executer.Execute(info, registers, null, ref pc);
+            VirtualMachine vm = new VirtualMachine(memory, pc: pc_before);
+            vm.Registers.X5 = (UInt32)x5_before;
 
-            Assert.Equal(expected_x5.ToString("X8"), registers.X5.ToString("X8"));
-            Assert.Equal(pc_before + 4, pc);
+            vm.Step();
+
+            Assert.Equal(expected_x5.ToString("X8"), vm.Registers.X5.ToString("X8"));
+            Assert.Equal(pc_before + 4, vm.PC);
         }
 
         [Theory]
-        [InlineData(0x04000, 0x10001234, 0x10009234, 0x10001238)]
-        public void Execute_JAL(UInt32 immediate, UInt32 previousPC, UInt32 expectedPC, UInt32 expected_x5)
+        [InlineData(0x04000, 0x10001234, 0x10005238, 0x10001238)]
+        public void Execute_JAL(UInt32 spaces, UInt32 previousPC, UInt32 expectedPC, UInt32 expected_x5)
         {
-            UInt32 pc = previousPC;
-            RegisterSet registers = new RegisterSet();
-
-            DecodeInfo info = new DecodeInfo
+            IWordMemory memory= new SparseWordMemory();
+            using (AssemblerV2 assembler = AssemblerV2.Create(previousPC))
             {
-                Instruction = Instruction.JAL,
-                Format = Format.J,
-                RD = 5,
-                J_Immediate = immediate
-            };
+                assembler.Assemble(
+                    $"jal x5,dest",
+                    $".skip {spaces},0",
+                    $"dest:"
+                );
+                memory.Load(assembler.ToHex());
+            }
 
-            Executer.Execute(info, registers, null, ref pc);
+            VirtualMachine vm = new VirtualMachine(memory, pc: previousPC);
 
-            Assert.Equal(expected_x5.ToString("X8"), registers.X5.ToString("X8"));
-            Assert.Equal(expectedPC.ToString("X8"), pc.ToString("X8"));
+            vm.Step();
+
+            Assert.Equal(expected_x5.ToString("X8"), vm.Registers.X5.ToString("X8"));
+            Assert.Equal(expectedPC.ToString("X8"), vm.PC.ToString("X8"));
         }
 
         [Theory]
         [InlineData(0x400, 0x11223344, 0x10001234, 0x11223744, 0x10001238)]
         public void Execute_JALR(UInt32 immediate, UInt32 x6, UInt32 previousPC, UInt32 expectedPC, UInt32 expected_x5)
         {
-            UInt32 pc = previousPC;
-            RegisterSet registers = new RegisterSet();
-            registers.X6 = x6;
-
-            DecodeInfo info = new DecodeInfo
+            IWordMemory memory= new SparseWordMemory();
+            using (AssemblerV2 assembler = AssemblerV2.Create(previousPC))
             {
-                Instruction = Instruction.JALR,
-                Format = Format.I,
-                RD = 5,
-                RS1 = 6,
-                I_Immediate = immediate
-            };
+                assembler.Assemble($"JALR x5,{immediate}(x6)");
+                memory.Load(assembler.ToHex());
+            }
 
-            Executer.Execute(info, registers, null, ref pc);
+            VirtualMachine vm = new VirtualMachine(memory, pc: previousPC);
+            vm.Registers.X6 = x6;
 
-            Assert.Equal(expected_x5.ToString("X8"), registers.X5.ToString("X8"));
-            Assert.Equal(expectedPC.ToString("X8"), pc.ToString("X8"));
+            vm.Step();
+
+            Assert.Equal(expected_x5.ToString("X8"), vm.Registers.X5.ToString("X8"));
+            Assert.Equal(expectedPC.ToString("X8"), vm.PC.ToString("X8"));
         }
 
         // --------------------------------------------------------------------
